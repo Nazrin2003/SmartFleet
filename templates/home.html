@@ -1,0 +1,706 @@
+{% extends "base_home.html" %}
+{% load static %}
+
+{% block title %}Landing | SMARTFLEET{% endblock %}
+
+{% block content %}
+    <style>
+        /* Hero Carousel Section - Full Width, No Margins */
+        .hero-carousel {
+            margin-top: 60px;
+            width: 100%;
+            position: relative;
+        }
+
+        .carousel-container {
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: none;
+        }
+
+        .carousel-slides {
+            position: relative;
+            width: 100%;
+            height: 85vh;
+            min-height: 600px;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(8, 145, 178, 0.85) 0%, rgba(6, 182, 212, 0.75) 50%, rgba(14, 116, 144, 0.85) 100%);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        /* Individual slide backgrounds */
+        .slide:nth-child(1) {
+            background-image: url('{% static "images/fleet.jpg" %}');
+        }
+
+        .slide:nth-child(2) {
+            background-image: url('{% static "images/fleet1.jpg" %}');
+        }
+
+        .slide:nth-child(3) {
+            background-image: url('{% static "images/fleet2.jpg" %}');
+        }
+
+        .slide-content {
+            text-align: center;
+            padding: 3rem 2rem;
+            max-width: 900px;
+            position: relative;
+            z-index: 2;
+            animation: slideIn 1s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-content h1 {
+            font-size: 4rem;
+            color: #FFFFFF;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            font-weight: 800;
+        }
+
+        .slide-content p {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 400;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .carousel-controls button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            font-size: 2rem;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .carousel-controls .prev {
+            left: 40px;
+        }
+
+        .carousel-controls .next {
+            right: 40px;
+        }
+
+        .carousel-controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .carousel-dots {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 14px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .dot.active,
+        .dot:hover {
+            background: #FFFFFF;
+            transform: scale(1.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-explore {
+            display: inline-block;
+            background: #FFFFFF;
+            color: #0891B2;
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-explore:hover {
+            background: #F0F9FF;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* About Section */
+        .about-section {
+            padding: 6rem 4%;
+            background: white;
+        }
+
+        .about-container {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .about-section h2 {
+            font-size: 2.8rem;
+            color: #0F172A;
+            margin-bottom: 2rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .about-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: #0891B2;
+            border-radius: 2px;
+        }
+
+        .about-section p {
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: #4B5563;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 6rem 4%;
+            background: #F9FAFB;
+        }
+
+        .features-section h2 {
+            font-size: 2.8rem;
+            color: #0F172A;
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .features-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: #0891B2;
+            border-radius: 2px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2.5rem 2rem;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid transparent;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(8, 145, 178, 0.15);
+            border-color: #0891B2;
+        }
+
+        .feature-icon {
+            width: 85px;
+            height: 85px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #0891B2, #06B6D4);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(-5deg);
+            background: linear-gradient(135deg, #0E7490, #0891B2);
+        }
+
+        .feature-icon i {
+            font-size: 2.3rem;
+            color: white;
+        }
+
+        .feature-card h3 {
+            font-size: 1.35rem;
+            color: #0F172A;
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+
+        /* Gallery Section */
+        .gallery-section {
+            padding: 6rem 4%;
+            background: white;
+        }
+
+        .gallery-section h2 {
+            font-size: 2.8rem;
+            color: #0F172A;
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .gallery-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: #0891B2;
+            border-radius: 2px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s ease;
+            aspect-ratio: 4 / 3;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.9), transparent);
+            padding: 2rem;
+            transform: translateY(100%);
+            transition: transform 0.4s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.08);
+        }
+
+        .gallery-item:hover .gallery-overlay {
+            transform: translateY(0);
+        }
+
+        .gallery-overlay span {
+            color: white;
+            font-size: 1.15rem;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            padding: 6rem 4%;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            text-align: center;
+        }
+
+        .contact-section h2 {
+            font-size: 2.8rem;
+            color: white;
+            margin-bottom: 3rem;
+        }
+
+        .contact-info {
+            display: flex;
+            gap: 4rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 2.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .contact-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-5px);
+        }
+
+        .contact-item i {
+            font-size: 1.7rem;
+            color: #06B6D4;
+        }
+
+        .contact-item span {
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 500;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .slide-content h1 {
+                font-size: 3.2rem;
+            }
+            
+            .carousel-slides {
+                height: 75vh;
+                min-height: 550px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .carousel-slides {
+                height: 70vh;
+                min-height: 500px;
+            }
+            
+            .slide-content h1 {
+                font-size: 2.5rem;
+            }
+            
+            .slide-content p {
+                font-size: 1.2rem;
+            }
+            
+            .carousel-controls button {
+                width: 55px;
+                height: 55px;
+                font-size: 1.6rem;
+            }
+            
+            .carousel-controls .prev {
+                left: 20px;
+            }
+            
+            .carousel-controls .next {
+                right: 20px;
+            }
+            
+            .about-section h2,
+            .features-section h2,
+            .gallery-section h2,
+            .contact-section h2 {
+                font-size: 2.2rem;
+            }
+            
+            .features-grid,
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .contact-info {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .carousel-slides {
+                height: 65vh;
+                min-height: 450px;
+            }
+            
+            .slide-content h1 {
+                font-size: 2rem;
+            }
+            
+            .slide-content p {
+                font-size: 1.05rem;
+            }
+            
+            .btn-explore {
+                padding: 1rem 2.2rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+
+    <!-- Hero Section with Carousel - Full Width with Background Images -->
+    <section class="hero-carousel">
+        <div class="carousel-container">
+            <div class="carousel-slides">
+                <div class="slide active">
+                    <div class="slide-content">
+                        <h1>Smart Fleet Management</h1>
+                        <p>Real-time monitoring and intelligent analytics for your entire fleet</p>
+                        <a href="#features" class="btn-explore">Explore Features</a>
+                    </div>
+                </div>
+                <div class="slide">
+                    <div class="slide-content">
+                        <h1>Predictive Maintenance</h1>
+                        <p>AI-powered insights to prevent breakdowns before they happen</p>
+                        <a href="#features" class="btn-explore">Explore Features</a>
+                    </div>
+                </div>
+                <div class="slide">
+                    <div class="slide-content">
+                        <h1>Driver Safety First</h1>
+                        <p>Advanced analytics to improve driver performance and reduce risks</p>
+                        <a href="#features" class="btn-explore">Explore Features</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="carousel-controls">
+                <button class="prev" onclick="changeSlide(-1)">&#10094;</button>
+                <button class="next" onclick="changeSlide(1)">&#10095;</button>
+            </div>
+            
+            <div class="carousel-dots">
+                <span class="dot active" onclick="currentSlide(1)"></span>
+                <span class="dot" onclick="currentSlide(2)"></span>
+                <span class="dot" onclick="currentSlide(3)"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="about-container">
+            <h2>About SMARTFLEET</h2>
+            <p>SMARTFLEET is a comprehensive fleet management platform designed to monitor, analyze, and optimize vehicle operations through intelligent data processing and real-time insights.</p>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <h2>Core Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h3>Vehicle Tracking</h3>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-gas-pump"></i>
+                </div>
+                <h3>Fuel Monitoring</h3>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <h3>Predictive Maintenance</h3>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3>Driver Safety</h3>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Analytics & Reporting</h3>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <h3>Sustainability Tracking</h3>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery-section">
+        <h2>Our Fleet in Action</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item">
+                <img src="{% static 'images/fleet1.jpg' %}" alt="Fleet Vehicle 1">
+                <div class="gallery-overlay">
+                    <span>Real-time Tracking</span>
+                </div>
+            </div>
+            <div class="gallery-item">
+                <img src="{% static 'images/fleet2.jpg' %}" alt="Fleet Vehicle 2">
+                <div class="gallery-overlay">
+                    <span>Dashboard View</span>
+                </div>
+            </div>
+            <div class="gallery-item">
+                <img src="{% static 'images/fleet3.jpg' %}" alt="Fleet Vehicle 3">
+                <div class="gallery-overlay">
+                    <span>Analytics Panel</span>
+                </div>
+            </div>
+            <div class="gallery-item">
+                <img src="{% static 'images/fleet4.jpg' %}" alt="Fleet Vehicle 4">
+                <div class="gallery-overlay">
+                    <span>Fleet Management</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <h2>Get in Touch</h2>
+        <div class="contact-info">
+            <div class="contact-item">
+                <i class="fas fa-envelope"></i>
+                <span>support@smartfleet.com</span>
+            </div>
+            <div class="contact-item">
+                <i class="fas fa-phone"></i>
+                <span>+91-9876543210</span>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        let slideIndex = 1;
+        let autoSlideTimer;
+
+        // Initialize carousel
+        showSlides(slideIndex);
+        startAutoSlide();
+
+        function changeSlide(n) {
+            clearTimeout(autoSlideTimer);
+            showSlides(slideIndex += n);
+            startAutoSlide();
+        }
+
+        function currentSlide(n) {
+            clearTimeout(autoSlideTimer);
+            showSlides(slideIndex = n);
+            startAutoSlide();
+        }
+
+        function showSlides(n) {
+            let slides = document.getElementsByClassName("slide");
+            let dots = document.getElementsByClassName("dot");
+            
+            if (n > slides.length) { slideIndex = 1 }
+            if (n < 1) { slideIndex = slides.length }
+            
+            for (let i = 0; i < slides.length; i++) {
+                slides[i].classList.remove("active");
+            }
+            
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove("active");
+            }
+            
+            slides[slideIndex - 1].classList.add("active");
+            dots[slideIndex - 1].classList.add("active");
+        }
+
+        function startAutoSlide() {
+            autoSlideTimer = setTimeout(function() {
+                slideIndex++;
+                showSlides(slideIndex);
+                startAutoSlide();
+            }, 5000);
+        }
+    </script>
+{% endblock %}
