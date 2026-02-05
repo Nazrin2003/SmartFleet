@@ -1,0 +1,491 @@
+{% extends 'base_home.html' %}
+{% load static %}
+
+{% block title %}Signup | SMARTFLEET{% endblock %}
+
+{% block content %}
+<style>
+    .signup-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #FFF8F3 0%, #F5E6FF 100%);
+        padding: 8rem 2rem 4rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Animated Background Elements */
+    .signup-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(111, 66, 193, 0.08) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: float 20s ease-in-out infinite;
+    }
+
+    .signup-section::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -15%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(255, 107, 157, 0.08) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: float 15s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translate(0, 0) scale(1);
+        }
+        50% {
+            transform: translate(30px, -30px) scale(1.1);
+        }
+    }
+
+    .signup-container {
+        display: flex;
+        max-width: 1000px;
+        width: 100%;
+        background: #FFFFFF;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(111, 66, 193, 0.2);
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Left Side (Image - Clean, No Overlay) */
+    .signup-image {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        min-height: 600px;
+    }
+
+    .signup-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+    }
+
+    .signup-container:hover .signup-image img {
+        transform: scale(1.05);
+    }
+
+    /* Right Side (Form) */
+    .signup-form {
+        flex: 1;
+        padding: 3.5rem 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .signup-form h2 {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 800;
+        color: #2D1B4E;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        font-size: 2rem;
+        letter-spacing: 0.5px;
+    }
+
+    .signup-subtitle {
+        text-align: center;
+        color: #6B7280;
+        margin-bottom: 2rem;
+        font-size: 0.95rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.2rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #2D1B4E;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        letter-spacing: 0.3px;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-wrapper i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9B59B6;
+        font-size: 1.1rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 0.9rem 1rem 0.9rem 3rem;
+        border: 2px solid #E5E7EB;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: #F9FAFB;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .form-group select {
+        cursor: pointer;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #6F42C1;
+        background: #FFFFFF;
+        box-shadow: 0 0 0 4px rgba(111, 66, 193, 0.1);
+    }
+
+    .form-group input::placeholder {
+        color: #9CA3AF;
+    }
+
+    .password-strength {
+        margin-top: 0.5rem;
+        height: 4px;
+        background: #E5E7EB;
+        border-radius: 2px;
+        overflow: hidden;
+        display: none;
+    }
+
+    .password-strength-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #EF4444, #F59E0B, #10B981);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    .terms-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        color: #4A3568;
+    }
+
+    .terms-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        cursor: pointer;
+        accent-color: #6F42C1;
+    }
+
+    .terms-checkbox a {
+        color: #FF6B9D;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .terms-checkbox a:hover {
+        text-decoration: underline;
+    }
+
+    .btn-signup {
+        width: 100%;
+        background: linear-gradient(135deg, #6F42C1 0%, #9B59B6 100%);
+        color: #FFFFFF;
+        font-weight: 600;
+        padding: 1rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(111, 66, 193, 0.3);
+        transition: all 0.3s ease;
+        font-family: 'Poppins', sans-serif;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-signup:hover {
+        background: linear-gradient(135deg, #5E35A8 0%, #8E44AD 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(111, 66, 193, 0.4);
+    }
+
+    .btn-signup:active {
+        transform: translateY(0);
+    }
+
+    .btn-signup:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 1.5rem 0;
+        color: #9CA3AF;
+        font-size: 0.85rem;
+    }
+
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #E5E7EB;
+    }
+
+    .social-signup {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .social-btn {
+        flex: 1;
+        padding: 0.8rem;
+        border: 2px solid #E5E7EB;
+        border-radius: 10px;
+        background: #FFFFFF;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        color: #4B5563;
+    }
+
+    .social-btn:hover {
+        border-color: #6F42C1;
+        background: #F9FAFB;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(111, 66, 193, 0.1);
+    }
+
+    .social-btn i {
+        font-size: 1.2rem;
+    }
+
+    .login-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 0.95rem;
+        color: #6B7280;
+    }
+
+    .login-link a {
+        color: #FF6B9D;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-bottom: 2px solid transparent;
+    }
+
+    .login-link a:hover {
+        color: #E55A8B;
+        border-bottom-color: #FF6B9D;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .signup-section {
+            padding: 6rem 1rem 2rem;
+        }
+
+        .signup-container {
+            flex-direction: column;
+            max-width: 500px;
+        }
+
+        .signup-image {
+            min-height: 250px;
+        }
+
+        .signup-form {
+            padding: 2.5rem 2rem;
+        }
+
+        .signup-form h2 {
+            font-size: 1.7rem;
+        }
+
+        .social-signup {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .signup-form {
+            padding: 2rem 1.5rem;
+        }
+
+        .signup-form h2 {
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+
+<section class="signup-section">
+    <div class="signup-container">
+        
+        <!-- Left Side (Clean Image - No Overlay) -->
+        <div class="signup-image">
+            <img src="{% static 'images/fleet1.jpg' %}" alt="Fleet Management">
+        </div>
+
+        <!-- Right Side (Form) -->
+        <div class="signup-form">
+            <h2>Create Account</h2>
+            <p class="signup-subtitle">Join SMARTFLEET to manage your fleet efficiently</p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="Create a strong password" required>
+                    </div>
+                    <div class="password-strength">
+                        <div class="password-strength-bar"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your password" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">User Role</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user-tag"></i>
+                        <select id="role" name="role" required>
+                            <option value="">-- Select Your Role --</option>
+                            <option value="admin">🔑 Admin</option>
+                            <option value="driver">🚗 Driver</option>
+                            <option value="manager">📊 Manager</option>
+                        </select>
+                    </div>
+                </div>
+
+                {% comment %} <label class="terms-checkbox">
+                    <input type="checkbox" required>
+                    <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
+                </label> {% endcomment %}
+
+                <button type="submit" class="btn-signup">
+                    Create Account
+                </button>
+            </form>
+
+            {% comment %} <div class="divider">or sign up with</div>
+
+            <div class="social-signup">
+                <button class="social-btn" type="button">
+                    <i class="fab fa-google" style="color: #DB4437;"></i>
+                    Google
+                </button>
+                <button class="social-btn" type="button">
+                    <i class="fab fa-microsoft" style="color: #00A4EF;"></i>
+                    Microsoft
+                </button>
+            </div> {% endcomment %}
+
+            <div class="login-link">
+                Already have an account?
+                <a href="{% url 'login' %}">Sign In</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Password strength indicator (optional enhancement)
+    const passwordInput = document.getElementById('password');
+    const strengthBar = document.querySelector('.password-strength-bar');
+    const strengthContainer = document.querySelector('.password-strength');
+
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+
+            if (password.length > 0) {
+                strengthContainer.style.display = 'block';
+            } else {
+                strengthContainer.style.display = 'none';
+                return;
+            }
+
+            // Calculate strength
+            if (password.length >= 8) strength += 25;
+            if (password.match(/[a-z]+/)) strength += 25;
+            if (password.match(/[A-Z]+/)) strength += 25;
+            if (password.match(/[0-9]+/)) strength += 25;
+
+            strengthBar.style.width = strength + '%';
+        });
+    }
+
+    // Password confirmation validation
+    const confirmPassword = document.getElementById('confirm_password');
+    if (confirmPassword) {
+        confirmPassword.addEventListener('input', function() {
+            if (this.value !== passwordInput.value) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+</script>
+{% endblock %}

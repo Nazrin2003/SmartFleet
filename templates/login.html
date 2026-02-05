@@ -1,11 +1,457 @@
-{% extends "base_home.html" %}
+{% extends 'base_home.html' %}
+{% load static %}
+
 {% block title %}Login | SMARTFLEET{% endblock %}
+
 {% block content %}
-<h2>Login</h2>
-<form method="post">
-    {% csrf_token %}
-    <input type="text" name="username" placeholder="Username"><br>
-    <input type="password" name="password" placeholder="Password"><br>
-    <button type="submit">Login</button>
-</form>
+<style>
+    .login-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #FFF8F3 0%, #F5E6FF 100%);
+        padding: 8rem 2rem 4rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Animated Background Elements */
+    .login-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(111, 66, 193, 0.08) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: float 20s ease-in-out infinite;
+    }
+
+    .login-section::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -15%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(255, 107, 157, 0.08) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: float 15s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translate(0, 0) scale(1);
+        }
+        50% {
+            transform: translate(30px, -30px) scale(1.1);
+        }
+    }
+
+    .login-container {
+        display: flex;
+        max-width: 1000px;
+        width: 100%;
+        background: #FFFFFF;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(111, 66, 193, 0.2);
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Left Side (Image) */
+    .login-image {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        min-height: 600px;
+    }
+
+    .login-image::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(111, 66, 193, 0.85) 0%, rgba(156 123 170 / 44%) 50%, rgba(45, 27, 78, 0.85) 100%);
+        z-index: 1;
+    }
+
+    .login-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+    }
+
+    .login-container:hover .login-image img {
+        transform: scale(1.05);
+    }
+
+    .login-overlay-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        text-align: center;
+        color: white;
+        padding: 2rem;
+    }
+
+    .login-overlay-content h3 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-overlay-content p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Right Side (Form) */
+    .login-form {
+        flex: 1;
+        padding: 3.5rem 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .login-form h2 {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 800;
+        color: #2D1B4E;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        font-size: 2rem;
+        letter-spacing: 0.5px;
+    }
+
+    .login-subtitle {
+        text-align: center;
+        color: #6B7280;
+        margin-bottom: 2.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #2D1B4E;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        letter-spacing: 0.3px;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-wrapper i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9B59B6;
+        font-size: 1.1rem;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 0.9rem 1rem 0.9rem 3rem;
+        border: 2px solid #E5E7EB;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: #F9FAFB;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #6F42C1;
+        background: #FFFFFF;
+        box-shadow: 0 0 0 4px rgba(111, 66, 193, 0.1);
+    }
+
+    .form-group input::placeholder {
+        color: #9CA3AF;
+    }
+
+    .remember-forgot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+    }
+
+    .remember-me {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #4A3568;
+    }
+
+    .remember-me input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: #6F42C1;
+    }
+
+    .forgot-password {
+        color: #FF6B9D;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .forgot-password:hover {
+        color: #E55A8B;
+        text-decoration: underline;
+    }
+
+    .btn-login {
+        width: 100%;
+        background: linear-gradient(135deg, #6F42C1 0%, #9B59B6 100%);
+        color: #FFFFFF;
+        font-weight: 600;
+        padding: 1rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(111, 66, 193, 0.3);
+        transition: all 0.3s ease;
+        font-family: 'Poppins', sans-serif;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-login:hover {
+        background: linear-gradient(135deg, #5E35A8 0%, #8E44AD 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(111, 66, 193, 0.4);
+    }
+
+    .btn-login:active {
+        transform: translateY(0);
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 1.5rem 0;
+        color: #9CA3AF;
+        font-size: 0.85rem;
+    }
+
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #E5E7EB;
+    }
+
+    .social-login {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .social-btn {
+        flex: 1;
+        padding: 0.8rem;
+        border: 2px solid #E5E7EB;
+        border-radius: 10px;
+        background: #FFFFFF;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        color: #4B5563;
+    }
+
+    .social-btn:hover {
+        border-color: #6F42C1;
+        background: #F9FAFB;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(111, 66, 193, 0.1);
+    }
+
+    .social-btn i {
+        font-size: 1.2rem;
+    }
+
+    .signup-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 0.95rem;
+        color: #6B7280;
+    }
+
+    .signup-link a {
+        color: #FF6B9D;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-bottom: 2px solid transparent;
+    }
+
+    .signup-link a:hover {
+        color: #E55A8B;
+        border-bottom-color: #FF6B9D;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .login-section {
+            padding: 6rem 1rem 2rem;
+        }
+
+        .login-container {
+            flex-direction: column;
+            max-width: 500px;
+        }
+
+        .login-image {
+            min-height: 300px;
+        }
+
+        .login-overlay-content h3 {
+            font-size: 1.8rem;
+        }
+
+        .login-overlay-content p {
+            font-size: 1rem;
+        }
+
+        .login-form {
+            padding: 2.5rem 2rem;
+        }
+
+        .login-form h2 {
+            font-size: 1.7rem;
+        }
+
+        .social-login {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .login-form {
+            padding: 2rem 1.5rem;
+        }
+
+        .login-form h2 {
+            font-size: 1.5rem;
+        }
+
+        .remember-forgot {
+            flex-direction: column;
+            gap: 0.8rem;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<section class="login-section">
+    <div class="login-container">
+        
+        <!-- Left Side (Image with Overlay) -->
+        <div class="login-image">
+            <img src="{% static 'images/fleet.jpg' %}" alt="Fleet Management">
+            {% comment %} <div class="login-overlay-content">
+                <h3>Welcome Back!</h3>
+                <p>Manage your fleet with intelligence and precision</p>
+            </div> {% endcomment %}
+        </div>
+
+        <!-- Right Side (Form) -->
+        <div class="login-form">
+            <h2>SMARTFLEET Login</h2>
+            <p class="login-subtitle">Enter your credentials to access your dashboard</p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    </div>
+                </div>
+
+                <div class="remember-forgot">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    Sign In
+                </button>
+            </form>
+
+            {% comment %} <div class="divider">or continue with</div>
+
+            <div class="social-login">
+                <button class="social-btn" type="button">
+                    <i class="fab fa-google" style="color: #DB4437;"></i>
+                    Google
+                </button>
+                <button class="social-btn" type="button">
+                    <i class="fab fa-microsoft" style="color: #00A4EF;"></i>
+                    Microsoft
+                </button>
+            </div> {% endcomment %}
+
+            <div class="signup-link">
+                Don't have an account?
+                <a href="{% url 'signup' %}">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
