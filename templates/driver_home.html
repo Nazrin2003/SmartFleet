@@ -1,5 +1,668 @@
-{% extends 'base_home.html' %}
-{% block content %}
-<h2>Driver Dashboard</h2>
-<p>Welcome, view your trips and assignments here.</p>
-{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard | SMARTFLEET</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #FFF8F3;
+            color: #2D1B4E;
+            line-height: 1.6;
+        }
+
+        /* Navigation Bar */
+        .dashboard-nav {
+            background: #FFFFFF;
+            box-shadow: 0 2px 12px rgba(111, 66, 193, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #2D1B4E;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-brand i {
+            color: #6F42C1;
+            font-size: 1.7rem;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            background: #F9FAFB;
+            border-radius: 50px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #6F42C1, #FF6B9D);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .user-details h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2D1B4E;
+        }
+
+        .user-details p {
+            font-size: 0.75rem;
+            color: #6B7280;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #6F42C1 0%, #9B59B6 100%);
+            color: #fff;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #5E35A8 0%, #8E44AD 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(111, 66, 193, 0.4);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            width: 100%;
+            height: 280px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #6F42C1 0%, #9B59B6 100%);
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.3;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .hero-overlay h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-overlay p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Quick Stats */
+        .quick-stats {
+            max-width: 1400px;
+            margin: -3rem auto 3rem;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(111, 66, 193, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(111, 66, 193, 0.2);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6F42C1, #FF6B9D);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2D1B4E;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-info p {
+            font-size: 0.85rem;
+            color: #6B7280;
+            font-weight: 500;
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem 3rem;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2D1B4E;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-header p {
+            color: #6B7280;
+            font-size: 0.95rem;
+        }
+
+        /* Feature Cards Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: #FFFFFF;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(111, 66, 193, 0.1);
+            transition: all 0.4s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(111, 66, 193, 0.2);
+            border-color: #6F42C1;
+        }
+
+        .feature-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6F42C1, #FF6B9D);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .feature-title {
+            flex: 1;
+        }
+
+        .feature-title h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2D1B4E;
+            margin-bottom: 0.2rem;
+        }
+
+        .feature-badge {
+            background: #F3E8FF;
+            color: #6F42C1;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .feature-description {
+            color: #6B7280;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .feature-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .action-tag {
+            background: #F9FAFB;
+            color: #4A3568;
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            border: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .action-tag i {
+            font-size: 0.7rem;
+            color: #6F42C1;
+        }
+
+        .feature-arrow {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: flex-end;
+            color: #6F42C1;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .feature-arrow i {
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover .feature-arrow i {
+            transform: translateX(5px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .hero-overlay h1 {
+                font-size: 2rem;
+            }
+
+            .hero-overlay p {
+                font-size: 1rem;
+            }
+
+            .quick-stats {
+                margin-top: -2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .user-info {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="dashboard-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-truck-moving"></i>
+                <span>SMARTFLEET</span>
+            </div>
+            <div class="nav-user">
+                <div class="user-info">
+                    <div class="user-avatar">{{ reg.user.username|first|upper }}</div>
+                    <div class="user-details">
+                        <h4>{{ reg.user.username }}</h4>
+                        <p>{{ reg.user_role|title }} • License: {{ reg.license_number }}</p>
+                    </div>
+                </div>
+                <a href="{% url 'logout' %}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <img src="{% static 'images/fleet.jpg' %}" alt="Fleet Dashboard" class="hero-image">
+        <div class="hero-overlay">
+            <h1>Welcome Back, {{ reg.user.username }}!</h1>
+            <p>Manage your trips and vehicle efficiently</p>
+        </div>
+    </section>
+
+    <!-- Quick Stats -->
+    <section class="quick-stats">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ reg.vehicle_assigned|default:"N/A" }}</h3>
+                    <p>Assigned Vehicle</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>5</h3>
+                    <p>Active Trips</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>4.8/5</h3>
+                    <p>Performance Score</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Content -->
+    <section class="dashboard-content">
+        <div class="section-header">
+            <h2>Quick Access Features</h2>
+            <p>Click on any feature to access its detailed page</p>
+        </div>
+
+        <div class="features-grid">
+            <!-- Trip Management -->
+            <a href="#" class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <div class="feature-title">
+                        <h3>Trip Management</h3>
+                        <span class="feature-badge">Essential</span>
+                    </div>
+                </div>
+                <p class="feature-description">
+                    Start, end, and manage all your trips. View trip history and track distance travelled.
+                </p>
+                <div class="feature-actions">
+                    <span class="action-tag"><i class="fas fa-check"></i> Start Trip</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> End Trip</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> View History</span>
+                </div>
+                <div class="feature-arrow">
+                    Access Feature <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <!-- Route Navigation -->
+            <a href="#" class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-location-arrow"></i>
+                    </div>
+                    <div class="feature-title">
+                        <h3>Route Navigation</h3>
+                        <span class="feature-badge">Navigation</span>
+                    </div>
+                </div>
+                <p class="feature-description">
+                    View assigned routes with optimized suggestions and detailed navigation information.
+                </p>
+                <div class="feature-actions">
+                    <span class="action-tag"><i class="fas fa-check"></i> View Route</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Optimization</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Distance</span>
+                </div>
+                <div class="feature-arrow">
+                    Access Feature <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <!-- Fuel Management -->
+            <a href="#" class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-gas-pump"></i>
+                    </div>
+                    <div class="feature-title">
+                        <h3>Fuel Management</h3>
+                        <span class="feature-badge">Tracking</span>
+                    </div>
+                </div>
+                <p class="feature-description">
+                    Enter fuel data, track usage history, and monitor vehicle mileage for completed trips.
+                </p>
+                <div class="feature-actions">
+                    <span class="action-tag"><i class="fas fa-check"></i> Enter Fuel</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Usage History</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Mileage</span>
+                </div>
+                <div class="feature-arrow">
+                    Access Feature <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <!-- Vehicle Status -->
+            <a href="#" class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="feature-title">
+                        <h3>Vehicle Status</h3>
+                        <span class="feature-badge">Maintenance</span>
+                    </div>
+                </div>
+                <p class="feature-description">
+                    Report vehicle issues, raise maintenance requests, and track resolution status.
+                </p>
+                <div class="feature-actions">
+                    <span class="action-tag"><i class="fas fa-check"></i> Report Issue</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Maintenance</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Status</span>
+                </div>
+                <div class="feature-arrow">
+                    Access Feature <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <!-- Notifications -->
+            <a href="#" class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="feature-title">
+                        <h3>Notifications & Alerts</h3>
+                        <span class="feature-badge">Updates</span>
+                    </div>
+                </div>
+                <p class="feature-description">
+                    Receive maintenance alerts, trip updates, and important reminders from admin.
+                </p>
+                <div class="feature-actions">
+                    <span class="action-tag"><i class="fas fa-check"></i> Alerts</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Updates</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Reminders</span>
+                </div>
+                <div class="feature-arrow">
+                    Access Feature <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <!-- Performance Feedback -->
+            <a href="#" class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="feature-title">
+                        <h3>Performance Feedback</h3>
+                        <span class="feature-badge">Analytics</span>
+                    </div>
+                </div>
+                <p class="feature-description">
+                    View your performance score, driving behavior summary, and risk assessment.
+                </p>
+                <div class="feature-actions">
+                    <span class="action-tag"><i class="fas fa-check"></i> Score</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Behavior</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Risk Level</span>
+                </div>
+                <div class="feature-arrow">
+                    Access Feature <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <!-- Profile Management -->
+            <a href="#" class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                    <div class="feature-title">
+                        <h3>Profile Management</h3>
+                        <span class="feature-badge">Settings</span>
+                    </div>
+                </div>
+                <p class="feature-description">
+                    View and update your personal profile, contact details, and security settings.
+                </p>
+                <div class="feature-actions">
+                    <span class="action-tag"><i class="fas fa-check"></i> View Profile</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Update Info</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Password</span>
+                </div>
+                <div class="feature-arrow">
+                    Access Feature <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <!-- Dashboard Overview -->
+            <a href="#" class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="feature-title">
+                        <h3>Dashboard Overview</h3>
+                        <span class="feature-badge">Home</span>
+                    </div>
+                </div>
+                <p class="feature-description">
+                    View assigned vehicle details, today's trips, alerts, and overall trip status.
+                </p>
+                <div class="feature-actions">
+                    <span class="action-tag"><i class="fas fa-check"></i> Vehicle Info</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Today's Trips</span>
+                    <span class="action-tag"><i class="fas fa-check"></i> Alerts</span>
+                </div>
+                <div class="feature-arrow">
+                    Access Feature <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+        </div>
+    </section>
+</body>
+</html>

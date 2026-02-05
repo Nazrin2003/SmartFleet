@@ -1,5 +1,1042 @@
-{% extends 'base_home.html' %}
-{% block content %}
-<h2>Fleet Manager Dashboard</h2>
-<p>Welcome, manage your fleet here.</p>
-{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Manager Dashboard | SMARTFLEET</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F3F4F6;
+            color: #1F2937;
+            line-height: 1.6;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            background: linear-gradient(135deg, #2D1B4E 0%, #6F42C1 100%);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+        }
+
+        .top-nav-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-brand i {
+            font-size: 2rem;
+            color: #FF6B9D;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box input {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 0.6rem 2.5rem 0.6rem 1rem;
+            color: white;
+            width: 300px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #FF6B9D, #6F42C1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .user-info h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .logout-btn {
+            background: rgba(255, 107, 157, 0.2);
+            border: 2px solid rgba(255, 107, 157, 0.5);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 107, 157, 0.3);
+            border-color: #FF6B9D;
+            transform: translateY(-2px);
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #9CA3AF;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            color: #4B5563;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: linear-gradient(135deg, #F3E8FF 0%, #FCE7F3 100%);
+            color: #6F42C1;
+        }
+
+        .sidebar-menu a i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            min-height: 100vh;
+        }
+
+        /* Welcome Section */
+        .welcome-section {
+            background: linear-gradient(135deg, #6F42C1 0%, #9B59B6 100%);
+            border-radius: 20px;
+            padding: 2.5rem;
+            color: white;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-content h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-content p {
+            font-size: 1.05rem;
+            opacity: 0.95;
+        }
+
+        /* Stats Overview */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.8rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(135deg, #6F42C1, #FF6B9D);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(111, 66, 193, 0.2);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #6F42C1 0%, #FF6B9D 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+        }
+
+        .stat-value {
+            text-align: right;
+        }
+
+        .stat-value h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1F2937;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-value p {
+            font-size: 0.85rem;
+            color: #6B7280;
+            font-weight: 500;
+        }
+
+        .stat-footer {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        .stat-footer.negative {
+            color: #EF4444;
+        }
+
+        /* Features Grid */
+        .features-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 0.3rem;
+        }
+
+        .section-header p {
+            color: #6B7280;
+            font-size: 0.95rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            transition: all 0.4s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(111, 66, 193, 0.05), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .feature-card:hover::before {
+            left: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(111, 66, 193, 0.15);
+            border-color: #6F42C1;
+        }
+
+        .feature-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .feature-icon-wrapper {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, #6F42C1 0%, #9B59B6 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+            transition: all 0.4s ease;
+        }
+
+        .feature-card:hover .feature-icon-wrapper {
+            transform: scale(1.1) rotate(-5deg);
+            background: linear-gradient(135deg, #FF6B9D 0%, #6F42C1 100%);
+        }
+
+        .feature-title {
+            flex: 1;
+        }
+
+        .feature-title h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 0.3rem;
+        }
+
+        .feature-badge {
+            background: linear-gradient(135deg, #F3E8FF 0%, #FCE7F3 100%);
+            color: #6F42C1;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .feature-description {
+            color: #6B7280;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            margin-bottom: 1.2rem;
+        }
+
+        .feature-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        .action-chip {
+            background: #F9FAFB;
+            color: #4B5563;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .action-chip:hover {
+            background: #F3E8FF;
+            border-color: #6F42C1;
+            color: #6F42C1;
+        }
+
+        .action-chip i {
+            font-size: 0.75rem;
+            color: #6F42C1;
+        }
+
+        .feature-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #F3F4F6;
+        }
+
+        .feature-link {
+            color: #6F42C1;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-link i {
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover .feature-link i {
+            transform: translateX(5px);
+        }
+
+        /* Alerts Section */
+        .alerts-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 0.8rem;
+            border-left: 4px solid;
+        }
+
+        .alert-item.warning {
+            background: #FEF3C7;
+            border-color: #F59E0B;
+        }
+
+        .alert-item.danger {
+            background: #FEE2E2;
+            border-color: #EF4444;
+        }
+
+        .alert-item.info {
+            background: #DBEAFE;
+            border-color: #3B82F6;
+        }
+
+        .alert-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .alert-item.warning .alert-icon {
+            background: #FCD34D;
+            color: #92400E;
+        }
+
+        .alert-item.danger .alert-icon {
+            background: #FCA5A5;
+            color: #991B1B;
+        }
+
+        .alert-item.info .alert-icon {
+            background: #93C5FD;
+            color: #1E40AF;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .search-box input {
+                width: 200px;
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .stats-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="top-nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-truck-moving"></i>
+                <span>SMARTFLEET</span>
+            </div>
+            
+            <div class="nav-right">
+                <div class="search-box">
+                    <input type="text" placeholder="Search vehicles, drivers, trips...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div class="user-profile">
+                    <div class="user-avatar">FM</div>
+                    <div class="user-info">
+                        <h4>Fleet Manager</h4>
+                        <p>Administrator</p>
+                    </div>
+                </div>
+                
+                <a href="{% url 'logout' %}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>Main Menu</h3>
+                <ul class="sidebar-menu">
+                    <li><a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="#"><i class="fas fa-bell"></i> Notifications</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Management</h3>
+                <ul class="sidebar-menu">
+                    <li><a href="#"><i class="fas fa-car"></i> Vehicles</a></li>
+                    <li><a href="#"><i class="fas fa-users"></i> Drivers</a></li>
+                    <li><a href="#"><i class="fas fa-route"></i> Trips & Routes</a></li>
+                    <li><a href="#"><i class="fas fa-tools"></i> Maintenance</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Analytics</h3>
+                <ul class="sidebar-menu">
+                    <li><a href="#"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                    <li><a href="#"><i class="fas fa-brain"></i> ML Insights</a></li>
+                    <li><a href="#"><i class="fas fa-gas-pump"></i> Fuel Analytics</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <h1>Welcome Back, Fleet Manager! 👋</h1>
+                    <p>Manage your entire fleet with intelligence and precision</p>
+                </div>
+            </section>
+
+            <!-- Stats Overview -->
+            <section class="stats-overview">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="stat-value">
+                            <h2>48</h2>
+                            <p>Total Vehicles</p>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>12% from last month</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="stat-value">
+                            <h2>32</h2>
+                            <p>Active Drivers</p>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>8% increase</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-route"></i>
+                        </div>
+                        <div class="stat-value">
+                            <h2>156</h2>
+                            <p>Ongoing Trips</p>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Active now</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-wrench"></i>
+                        </div>
+                        <div class="stat-value">
+                            <h2>5</h2>
+                            <p>In Maintenance</p>
+                        </div>
+                    </div>
+                    <div class="stat-footer negative">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Needs attention</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section class="features-section">
+                <div class="section-header">
+                    <h2>Fleet Management Features</h2>
+                    <p>Access all tools and analytics to manage your fleet efficiently</p>
+                </div>
+
+                <div class="features-grid">
+                    <!-- Dashboard & Monitoring -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-tachometer-alt"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>Dashboard & Monitoring</h3>
+                                <span class="feature-badge">Overview</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Real-time fleet status monitoring with comprehensive views of active, idle, and maintenance vehicles. Track all trips and receive instant alerts.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Fleet Status</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Active Vehicles</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Trip Monitor</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Alerts</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">Access Dashboard <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+
+                    <!-- Vehicle Management -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>Vehicle Management</h3>
+                                <span class="feature-badge">Core</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Complete vehicle lifecycle management. Add, update, remove vehicles and track registration, type, status, availability, and usage history.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Add Vehicle</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Update Details</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Track Status</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Usage History</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">Manage Vehicles <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+
+                    <!-- Driver Management -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>Driver Management</h3>
+                                <span class="feature-badge">Personnel</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Manage driver profiles, assignments, and performance. Track availability, monitor driver history, and assign vehicles efficiently.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Add Driver</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Assign Vehicles</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> View History</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Performance</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">Manage Drivers <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+
+                    <!-- Trip & Route Management -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-route"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>Trip & Route Management</h3>
+                                <span class="feature-badge">Operations</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Create and assign trips, monitor progress in real-time, view trip details, and analyze route efficiency for optimization.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Create Trip</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Assign Routes</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Track Progress</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Route Analysis</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">Manage Trips <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+
+                    <!-- Fuel Monitoring -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-gas-pump"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>Fuel Monitoring</h3>
+                                <span class="feature-badge">Analytics</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Track fuel consumption per vehicle, identify abnormal usage patterns, view efficiency reports, and reduce fuel wastage.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Track Consumption</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Detect Anomalies</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Efficiency Reports</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Cost Analysis</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">View Fuel Data <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+
+                    <!-- Maintenance Management -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-tools"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>Maintenance Management</h3>
+                                <span class="feature-badge">Service</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Schedule vehicle servicing, track maintenance and repair history, receive predictive alerts, and reduce vehicle downtime.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Schedule Service</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Repair History</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Predictive Alerts</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Reduce Downtime</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">Manage Maintenance <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+
+                    <!-- Machine Learning Analytics -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>ML Analytics</h3>
+                                <span class="feature-badge">AI-Powered</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Advanced machine learning insights for predictive maintenance, fuel patterns, driver risk scores, and route optimization.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Predictions</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Fuel Patterns</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Risk Scores</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Optimization</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">View ML Insights <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+
+                    <!-- Alerts & Notifications -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>Alerts & Notifications</h3>
+                                <span class="feature-badge">Monitoring</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Receive real-time alerts for overdue maintenance, fuel anomalies, high-risk drivers, and critical events requiring attention.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Maintenance Alerts</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Fuel Alerts</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Driver Alerts</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Actions</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">View Alerts <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+
+                    <!-- Reports & Analytics -->
+                    <a href="#" class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon-wrapper">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="feature-title">
+                                <h3>Reports & Analytics</h3>
+                                <span class="feature-badge">Insights</span>
+                            </div>
+                        </div>
+                        <p class="feature-description">
+                            Generate comprehensive reports on vehicle and driver performance. View monthly and yearly summaries with export capabilities.
+                        </p>
+                        <div class="feature-actions">
+                            <span class="action-chip"><i class="fas fa-check"></i> Vehicle Reports</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Driver Reports</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Summaries</span>
+                            <span class="action-chip"><i class="fas fa-check"></i> Export</span>
+                        </div>
+                        <div class="feature-footer">
+                            <span class="feature-link">Generate Reports <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Recent Alerts -->
+            <section class="alerts-section">
+                <div class="section-header">
+                    <h2>Recent Alerts</h2>
+                    <p>Critical notifications requiring your attention</p>
+                </div>
+
+                <div class="alert-item warning">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <strong>Overdue Maintenance</strong>
+                        <p style="font-size: 0.85rem; margin-top: 0.2rem; color: #6B7280;">Vehicle TN-09-AB-1234 has exceeded its service interval by 500km</p>
+                    </div>
+                </div>
+
+                <div class="alert-item danger">
+                    <div class="alert-icon">
+                        <i class="fas fa-gas-pump"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <strong>Fuel Anomaly Detected</strong>
+                        <p style="font-size: 0.85rem; margin-top: 0.2rem; color: #6B7280;">Abnormal fuel consumption detected in Vehicle KL-07-CD-5678</p>
+                    </div>
+                </div>
+
+                <div class="alert-item info">
+                    <div class="alert-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <strong>High-Risk Driver Alert</strong>
+                        <p style="font-size: 0.85rem; margin-top: 0.2rem; color: #6B7280;">Driver John Doe has shown risky driving patterns in last 3 trips</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

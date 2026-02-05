@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from .models import Registration 
+from django.contrib.auth.decorators import login_required
+
 
 def home(request):
     return render(request, 'home.html')
@@ -81,8 +83,20 @@ def login_view(request):
     return render(request, 'login.html')
 
 
-def manager_home(request):
-    return render(request, 'manager_home.html')
 
+@login_required
+def manager_home(request):
+    reg_id = request.session.get('reg_id')
+    reg = Registration.objects.filter(id=reg_id).first()
+    return render(request, 'manager_home.html', {'reg': reg})
+
+@login_required
 def driver_home(request):
-    return render(request, 'driver_home.html')
+    reg_id = request.session.get('reg_id')
+    reg = Registration.objects.filter(id=reg_id).first()
+    return render(request, 'driver_home.html', {'reg': reg})
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, "You have been logged out successfully.")
+    return redirect('home')
