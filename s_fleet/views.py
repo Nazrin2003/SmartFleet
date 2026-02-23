@@ -2,12 +2,13 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from .models import Registration 
 from django.contrib.auth.decorators import login_required
-
+from .models import Registration
+from .decorators import role_required 
 
 def home(request):
     return render(request, 'home.html')
+
 
 def signup(request):
     if request.method == 'POST':
@@ -66,10 +67,8 @@ def login_view(request):
 
             # Role-based redirect
             if reg.user_role == 'manager':
-                messages.success(request, f"✅ Welcome {user.username}, Fleet Manager Dashboard loaded.")
                 return redirect('manager_home')
             elif reg.user_role == 'driver':
-                messages.success(request, f"✅ Welcome {user.username}, Driver Dashboard loaded.")
                 return redirect('driver_home')
             else:
                 messages.error(request, "⚠️ Invalid role. Contact admin.")
@@ -83,18 +82,21 @@ def login_view(request):
     return render(request, 'login.html')
 
 
-
-@login_required
+@login_required(login_url='login')
+@role_required('manager')
 def manager_home(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
     return render(request, 'manager_home.html', {'reg': reg})
 
-@login_required
+
+@login_required(login_url='login')
+@role_required('driver')
 def driver_home(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
     return render(request, 'driver_home.html', {'reg': reg})
+
 
 def logout_view(request):
     logout(request)

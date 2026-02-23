@@ -75,9 +75,17 @@ WSGI_APPLICATION = 'smrt_fleet.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+    'default': {   # still SQLite
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'mysql_db': {  # new MySQL connection
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'pyProcess',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
