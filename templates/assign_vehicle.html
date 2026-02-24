@@ -1,0 +1,20 @@
+{% extends "base_manager.html" %}
+{% block title %}Assign Vehicle{% endblock %}
+{% block content %}
+<h2>Assign Vehicle to {{ driver.user.username }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <p>
+        <label>Available Vehicles</label><br>
+        <select name="vehicle_id" required>
+            <option value="">Select Vehicle</option>
+            {% for vehicle in vehicles %}
+                <option value="{{ vehicle.id }}">{{ vehicle.plate_number }} - {{ vehicle.model_name }}</option>
+            {% endfor %}
+        </select>
+    </p>
+    <button class="btn" type="submit">Assign</button>
+    <a class="btn secondary" href="{% url 'driver_detail' driver.id %}">Cancel</a>
+</form>
+{% endblock %}
+

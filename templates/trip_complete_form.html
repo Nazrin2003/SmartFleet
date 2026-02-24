@@ -1,0 +1,18 @@
+{% extends "base_driver.html" %}
+{% block title %}Complete Trip{% endblock %}
+{% block content %}
+<h2>Complete Trip #{{ trip.id }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <p><label>Actual Delivery Time (hours)</label><br><input type="number" step="0.01" name="actual_delivery_time" required></p>
+    <p><label>Fuel Filled (liters)</label><br><input type="number" step="0.01" name="fuel_filled_liters" required></p>
+    <p><label>Fuel Cost</label><br><input type="number" step="0.01" name="fuel_cost" required></p>
+    <p><label>Odometer</label><br><input type="number" name="odometer_reading" required></p>
+    <p><label>Engine Temp</label><br><input type="number" step="0.01" name="engine_temp" required></p>
+    <p><label>Oil Quality</label><br><input type="number" step="0.01" name="oil_quality" required></p>
+    <p><label>Brake Condition</label><br><input type="number" step="0.01" name="brake_condition" required></p>
+    <p><label>Weather</label><br><input type="text" name="weather" required></p>
+    <p><label>Road Condition</label><br><input type="text" name="road_condition" required></p>
+    <button class="btn" type="submit">Submit</button>
+</form>
+{% endblock %}

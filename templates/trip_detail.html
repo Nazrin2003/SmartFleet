@@ -1,0 +1,45 @@
+{% extends "base_driver.html" %}
+{% block title %}Trip Detail{% endblock %}
+{% block content %}
+<h2>Trip #{{ trip.id }}</h2>
+<p><strong>Route:</strong> {{ trip.origin }} to {{ trip.destination }}</p>
+<p><strong>Vehicle:</strong> {{ trip.vehicle.plate_number }}</p>
+<p><strong>Status:</strong> {{ trip.get_status_display }}</p>
+<p><strong>Load:</strong> {{ trip.load_details|default:"-" }}</p>
+<p><strong>Estimated distance:</strong> {{ trip.estimated_distance_km }} km</p>
+<p><strong>Expected fuel:</strong> {{ trip.expected_fuel_liters }} liters</p>
+
+{% if trip.status == 'pending' %}
+<form method="post" style="display:inline-block;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="accept">
+    <button class="btn" type="submit">Accept</button>
+</form>
+<form method="post" style="display:inline-block;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="reject">
+    <button class="btn secondary" type="submit">Reject</button>
+</form>
+{% elif trip.status == 'in_progress' %}
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="complete">
+    <button class="btn" type="submit">Complete</button>
+</form>
+{% elif trip.status == 'completed' %}
+<h3>Trip Summary</h3>
+<p><strong>Completed At:</strong> {{ trip.completed_at }}</p>
+<p><strong>Fuel Used:</strong> {{ trip.fuel_used_liters }}</p>
+{% if trip.completion %}
+<p><strong>Actual Delivery Time:</strong> {{ trip.completion.actual_delivery_time }}</p>
+<p><strong>Fuel Cost:</strong> {{ trip.completion.fuel_cost }}</p>
+<p><strong>Odometer:</strong> {{ trip.completion.odometer_reading }}</p>
+<p><strong>Engine Temp:</strong> {{ trip.completion.engine_temp }}</p>
+<p><strong>Oil Quality:</strong> {{ trip.completion.oil_quality }}</p>
+<p><strong>Brake Condition:</strong> {{ trip.completion.brake_condition }}</p>
+<p><strong>Weather:</strong> {{ trip.completion.weather }}</p>
+<p><strong>Road Condition:</strong> {{ trip.completion.road_condition }}</p>
+{% endif %}
+{% endif %}
+{% endblock %}
+

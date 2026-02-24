@@ -1,0 +1,27 @@
+{% extends "base_manager.html" %}
+{% block title %}Drivers{% endblock %}
+{% block content %}
+<h2>Drivers</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Driver</th><th>License</th><th>Phone</th><th>Assigned Vehicle</th><th>Profile</th><th>Status</th><th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for driver in drivers %}
+    <tr>
+        <td>{{ driver.user.username }}</td>
+        <td>{{ driver.license_number|default:'-' }}</td>
+        <td>{{ driver.phone_number|default:'-' }}</td>
+        <td>{% if driver.assigned_vehicle %}{{ driver.assigned_vehicle.plate_number }}{% else %}-{% endif %}</td>
+        <td>{% if driver.profile_complete %}Complete{% else %}Incomplete{% endif %}</td>
+        <td>{{ driver.get_status_display }}</td>
+        <td><a href="{% url 'driver_detail' driver.id %}">View</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">No drivers found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

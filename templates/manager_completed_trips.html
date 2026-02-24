@@ -1,0 +1,50 @@
+{% extends "base_manager.html" %}
+{% block title %}Completed Trips Report{% endblock %}
+{% block content %}
+<h2>Completed Trips Report</h2>
+<form class="filters" method="get">
+    <input type="text" name="trip_id" placeholder="Trip ID" value="{{ request.GET.trip_id }}">
+    <select name="vehicle">
+        <option value="">All Vehicles</option>
+        {% for v in vehicles %}
+        <option value="{{ v.id }}" {% if request.GET.vehicle == v.id|stringformat:"s" %}selected{% endif %}>{{ v.plate_number }}</option>
+        {% endfor %}
+    </select>
+    <select name="driver">
+        <option value="">All Drivers</option>
+        {% for d in drivers %}
+        <option value="{{ d.id }}" {% if request.GET.driver == d.id|stringformat:"s" %}selected{% endif %}>{{ d.user.username }}</option>
+        {% endfor %}
+    </select>
+    <input type="date" name="date_from" value="{{ request.GET.date_from }}">
+    <input type="date" name="date_to" value="{{ request.GET.date_to }}">
+    <select name="sort">
+        <option value="date_desc" {% if request.GET.sort != 'date_asc' %}selected{% endif %}>Date Desc</option>
+        <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>Date Asc</option>
+    </select>
+    <button class="btn" type="submit">Filter</button>
+</form>
+<div class="actions">
+    <a class="btn" href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
+    <button class="btn secondary" type="button" onclick="window.print()">Print Report</button>
+</div>
+<table>
+    <thead><tr><th>Trip ID</th><th>Driver</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>Date</th><th>Fuel Used</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for trip in trips %}
+    <tr>
+        <td>{{ trip.id }}</td>
+        <td>{{ trip.driver.user.username }}</td>
+        <td>{{ trip.vehicle.plate_number }}</td>
+        <td>{{ trip.origin }}</td>
+        <td>{{ trip.destination }}</td>
+        <td>{{ trip.completed_at }}</td>
+        <td>{{ trip.fuel_used_liters }}</td>
+        <td>{{ trip.get_status_display }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8">No completed trips found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

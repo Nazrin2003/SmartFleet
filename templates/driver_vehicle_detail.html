@@ -1,0 +1,13 @@
+{% extends "base_driver.html" %}
+{% block title %}Vehicle Details{% endblock %}
+{% block content %}
+<h2>Vehicle Details</h2>
+{% if vehicle %}
+<p><strong>Plate:</strong> {{ vehicle.plate_number }}</p>
+<p><strong>Model:</strong> {{ vehicle.model_name }}</p>
+<p><strong>Status:</strong> {{ vehicle.get_status_display }}</p>
+<p><strong>Maintenance Required:</strong> {% if vehicle.status == 'maintenance_required' or vehicle.status == 'maintenance' %}Yes{% else %}No{% endif %}</p>
+{% else %}
+<p>No vehicle assigned.</p>
+{% endif %}
+{% endblock %}

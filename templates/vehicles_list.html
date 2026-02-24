@@ -1,0 +1,39 @@
+{% extends "base_manager.html" %}
+{% block title %}Vehicles{% endblock %}
+{% block content %}
+<h2>Vehicles</h2>
+<div class="actions">
+    <a class="btn" href="{% url 'vehicle_create' %}">Add Vehicle</a>
+</div>
+<table>
+    <thead>
+        <tr>
+            <th>Plate</th>
+            <th>Model</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Assigned Driver</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for vehicle in vehicles %}
+        <tr>
+            <td>{{ vehicle.plate_number }}</td>
+            <td>{{ vehicle.model_name }}</td>
+            <td>{{ vehicle.vehicle_type }}</td>
+            <td>{{ vehicle.get_status_display }}</td>
+            <td>{% if vehicle.assigned_driver %}{{ vehicle.assigned_driver.user.username }}{% else %}-{% endif %}</td>
+            <td>
+                <a href="{% url 'vehicle_detail' vehicle.id %}">View</a> |
+                <a href="{% url 'vehicle_edit' vehicle.id %}">Edit</a> |
+                <a href="{% url 'vehicle_delete' vehicle.id %}" onclick="return confirm('Delete vehicle?')">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No vehicles found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

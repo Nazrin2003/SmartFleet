@@ -1,0 +1,55 @@
+{% extends "base_manager.html" %}
+{% block title %}Driver Detail{% endblock %}
+{% block content %}
+<h2>Driver: {{ driver.user.username }}</h2>
+<p><strong>License:</strong> {{ driver.license_number|default:'-' }}</p>
+<p><strong>License Expiry:</strong> {{ driver.license_expiry_date|default:'-' }}</p>
+<p><strong>Phone:</strong> {{ driver.phone_number|default:'-' }}</p>
+<p><strong>Address:</strong> {{ driver.address|default:'-' }}</p>
+<p><strong>Experience (years):</strong> {{ driver.years_of_experience|default:'-' }}</p>
+<p><strong>Emergency Contact:</strong> {{ driver.emergency_contact_name|default:'-' }} ({{ driver.emergency_contact_phone|default:'-' }})</p>
+<p><strong>Assigned Vehicle:</strong> {% if driver.assigned_vehicle %}{{ driver.assigned_vehicle.plate_number }}{% else %}-{% endif %}</p>
+<p><strong>Status:</strong> {{ driver.get_status_display }}</p>
+<div class="actions">
+    <a class="btn" href="{% url 'assign_vehicle' driver.id %}">Assign Vehicle</a>
+    {% if driver.assigned_vehicle %}
+    <a class="btn secondary" href="{% url 'unassign_vehicle' driver.id %}" onclick="return confirm('Unassign this vehicle from driver?')">Unassign Vehicle</a>
+    {% endif %}
+</div>
+
+<h3>Trip History</h3>
+<table>
+    <thead><tr><th>Trip ID</th><th>Vehicle</th><th>Route</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>
+    {% for trip in trips %}
+    <tr><td>{{ trip.id }}</td><td>{{ trip.vehicle.plate_number }}</td><td>{{ trip.origin }} - {{ trip.destination }}</td><td>{{ trip.get_status_display }}</td><td>{{ trip.created_at }}</td></tr>
+    {% empty %}
+    <tr><td colspan="5">No trips.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<h3>Fuel Logs</h3>
+<table>
+    <thead><tr><th>Date</th><th>Vehicle</th><th>Liters</th><th>Cost</th></tr></thead>
+    <tbody>
+    {% for log in fuel_logs %}
+    <tr><td>{{ log.logged_at }}</td><td>{{ log.vehicle.plate_number }}</td><td>{{ log.liters }}</td><td>{{ log.cost }}</td></tr>
+    {% empty %}
+    <tr><td colspan="4">No fuel logs.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<h3>Maintenance Alerts</h3>
+<table>
+    <thead><tr><th>Date</th><th>Vehicle</th><th>Notes</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for item in maintenance_alerts %}
+    <tr><td>{{ item.created_at }}</td><td>{{ item.vehicle.plate_number }}</td><td>{{ item.notes }}</td><td>{% if item.is_resolved %}Resolved{% else %}Open{% endif %}</td></tr>
+    {% empty %}
+    <tr><td colspan="4">No maintenance alerts.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

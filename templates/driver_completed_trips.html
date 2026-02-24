@@ -1,0 +1,36 @@
+{% extends "base_driver.html" %}
+{% block title %}My Completed Trips{% endblock %}
+{% block content %}
+<h2>My Completed Trips</h2>
+<form class="filters" method="get">
+    <input type="date" name="date_from" value="{{ request.GET.date_from }}">
+    <input type="date" name="date_to" value="{{ request.GET.date_to }}">
+    <select name="sort">
+        <option value="date_desc" {% if request.GET.sort != 'date_asc' %}selected{% endif %}>Date Desc</option>
+        <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>Date Asc</option>
+    </select>
+    <button class="btn" type="submit">Filter</button>
+</form>
+<p>
+    <a class="btn" href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
+    <button class="btn secondary" type="button" onclick="window.print()">Print</button>
+</p>
+<table>
+    <thead><tr><th>Trip ID</th><th>Vehicle</th><th>Date</th><th>Fuel Used</th><th>Delivery Time</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for trip in trips %}
+    <tr>
+        <td>{{ trip.id }}</td>
+        <td>{{ trip.vehicle.plate_number }}</td>
+        <td>{{ trip.completed_at }}</td>
+        <td>{{ trip.fuel_used_liters }}</td>
+        <td>{% if trip.completion %}{{ trip.completion.actual_delivery_time }}{% endif %}</td>
+        <td>{{ trip.get_status_display }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">No completed trips.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

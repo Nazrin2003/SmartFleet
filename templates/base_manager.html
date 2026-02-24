@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Driver | SMARTFLEET{% endblock %}</title>
+    <title>{% block title %}Manager | SMARTFLEET{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -17,14 +17,14 @@
         .top {
             background: linear-gradient(135deg, #2d1b4e 0%, #6f42c1 100%);
             color: #fff;
-            padding: 25px 25px;
+            padding: 12px 18px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 6px 20px rgba(45, 27, 78, 0.22);
+            box-shadow: 0 6px 20px rgba(45, 27, 78, 0.25);
         }
         .brand {
             font-family: 'Poppins', sans-serif;
@@ -34,58 +34,40 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 1rem;
         }
         .brand i { color: #ff6b9d; }
-        .top-right { display: flex; align-items: center; gap: 10px; }
-        .user-chip {
-            background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.2);
-            border-radius: 999px;
-            padding: 5px 10px;
-            font-size: .86rem;
-            font-weight: 600;
-        }
-        .logout-link {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: .88rem;
-            background: rgba(255, 107, 157, 0.22);
-            border: 1px solid rgba(255, 107, 157, 0.45);
-            padding: 6px 10px;
-            border-radius: 8px;
-        }
         .layout {
             display: grid;
-            grid-template-columns: 240px 1fr;
-            min-height: calc(100vh - 52px);
+            grid-template-columns: 250px 1fr;
+            min-height: calc(100vh - 56px);
         }
         .sidebar {
             background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
             border-right: 1px solid #eadff8;
-            padding: 14px 10px;
+            padding: 16px 12px;
         }
         .sidebar a {
             display: block;
-            padding: 9px 11px;
+            padding: 10px 12px;
             color: #4a3568;
             text-decoration: none;
             border-radius: 10px;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
+            transition: all .2s ease;
         }
         .sidebar a:hover, .sidebar a.active {
             background: linear-gradient(135deg, #f3e8ff 0%, #ffe9f1 100%);
             color: #6f42c1;
         }
-        .main { padding: 12px 14px 16px; }
+        .main { padding: 14px 16px 18px; }
         .hero {
             border-radius: 14px;
             color: #fff;
-            padding: 18px;
-            margin-bottom: 12px;
+            padding: 24px 22px;
+            margin-bottom: 14px;
             background-size: cover;
             background-position: center;
             position: relative;
@@ -95,39 +77,47 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(45, 27, 78, 0.86), rgba(111, 66, 193, 0.78));
+            background: linear-gradient(135deg, rgba(45, 27, 78, 0.84), rgba(111, 66, 193, 0.78));
         }
         .hero > * { position: relative; z-index: 1; }
         .hero h1, .hero h2 { font-family: 'Poppins', sans-serif; margin-bottom: 4px; }
-        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
-        .card {
-            background: rgba(255, 255, 255, 0.96);
+        .cards, .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px; }
+        .card, .dash-card {
+            background: rgba(255, 255, 255, 0.95);
             border: 1px solid #eadff8;
             border-radius: 12px;
-            padding: 12px;
+            padding: 14px;
             box-shadow: 0 6px 18px rgba(111, 66, 193, 0.08);
         }
-        .card h3 {
-            font-size: 11px;
+        .card h3, .dash-card h3 {
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: .4px;
             color: #7a6a96;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
-        .card p { font-size: 1.25rem; font-weight: 700; color: #2d1b4e; }
-        .actions { margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .card p, .dash-card p { font-size: 1.65rem; font-weight: 700; color: #2d1b4e; }
+        .dash-card.alert p { color: #b4233b; }
+        .actions { margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
         .btn {
             background: linear-gradient(135deg, #6f42c1 0%, #9b59b6 100%);
             color: #fff;
-            padding: 8px 11px;
+            padding: 8px 12px;
             border-radius: 8px;
             text-decoration: none;
             border: 0;
             cursor: pointer;
             font-weight: 600;
-            font-size: .88rem;
+            font-size: .9rem;
         }
         .btn.secondary { background: linear-gradient(135deg, #4b5563 0%, #334155 100%); }
+        .panel, .alerts {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #eadff8;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
         .filters {
             background: rgba(255, 255, 255, 0.95);
             border: 1px solid #eadff8;
@@ -147,6 +137,7 @@
             max-width: 420px;
             background: #fff;
         }
+        form p { margin-bottom: 2px; }
         table {
             width: 100%;
             border-collapse: separate;
@@ -161,11 +152,11 @@
             background: linear-gradient(135deg, #f3e8ff 0%, #ffeaf3 100%);
             color: #4a3568;
             font-family: 'Poppins', sans-serif;
-            font-size: .8rem;
+            font-size: .82rem;
             text-transform: uppercase;
             letter-spacing: .4px;
         }
-        th, td { padding: 9px 10px; border-bottom: 1px solid #f1e9fb; text-align: left; font-size: .9rem; }
+        th, td { padding: 10px; border-bottom: 1px solid #f1e9fb; text-align: left; font-size: .92rem; }
         tr:last-child td { border-bottom: 0; }
         tr:hover td { background: #fcf9ff; }
         .messages { margin-bottom: 10px; }
@@ -175,33 +166,32 @@
             padding: 8px 10px;
             border-radius: 8px;
             margin-bottom: 8px;
-            font-size: .88rem;
+            font-size: .9rem;
         }
         @media (max-width: 940px) {
             .layout { grid-template-columns: 1fr; }
             .sidebar { border-right: 0; border-bottom: 1px solid #eadff8; }
-            .main { padding: 10px; }
-            .user-chip { display: none; }
+            .main { padding: 12px; }
+            .hero { padding: 18px 14px; }
         }
     </style>
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
     <div class="top">
-        <div class="brand"><i class="fas fa-truck-moving"></i>SMARTFLEET Driver</div>
-        <div class="top-right">
-            {% if reg and reg.user %}<span class="user-chip">{{ reg.user.username }}</span>{% endif %}
-            <a href="{% url 'logout' %}" class="logout-link">Logout</a>
+        <div class="brand"><i class="fas fa-truck-moving"></i>SMARTFLEET Manager</div>
+        <div>
+            {% if reg %}{{ reg.user.username }}{% endif %}
+            <a href="{% url 'logout' %}" style="color:#fff; margin-left:14px; font-weight:600;">Logout</a>
         </div>
     </div>
-
     <div class="layout">
         <aside class="sidebar">
-            <a href="{% url 'driver_home' %}" class="{% if request.resolver_match.url_name == 'driver_home' %}active{% endif %}">Dashboard</a>
-            <a href="{% url 'driver_trips' %}" class="{% if request.resolver_match.url_name == 'driver_trips' %}active{% endif %}">My Trips</a>
-            <a href="{% url 'driver_completed_trips' %}" class="{% if request.resolver_match.url_name == 'driver_completed_trips' %}active{% endif %}">My Reports</a>
-            <a href="{% url 'driver_vehicle_detail' %}" class="{% if request.resolver_match.url_name == 'driver_vehicle_detail' %}active{% endif %}">Vehicle Details</a>
-            <a href="{% url 'driver_profile' %}" class="{% if request.resolver_match.url_name == 'driver_profile' %}active{% endif %}">My Profile</a>
+            <a href="{% url 'manager_home' %}" class="{% if request.resolver_match.url_name == 'manager_home' %}active{% endif %}">Dashboard</a>
+            <a href="{% url 'vehicles_page' %}" class="{% if request.resolver_match.url_name == 'vehicles_page' %}active{% endif %}">Vehicles</a>
+            <a href="{% url 'drivers_page' %}" class="{% if request.resolver_match.url_name == 'drivers_page' %}active{% endif %}">Drivers</a>
+            <a href="{% url 'trips_page' %}" class="{% if request.resolver_match.url_name == 'trips_page' %}active{% endif %}">Trips</a>
+            <a href="{% url 'manager_completed_trips' %}" class="{% if request.resolver_match.url_name == 'manager_completed_trips' %}active{% endif %}">Reports</a>
         </aside>
         <main class="main">
             {% if messages %}
