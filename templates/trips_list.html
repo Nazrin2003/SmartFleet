@@ -1,11 +1,29 @@
 {% extends "base_manager.html" %}
+{% load static %}
 {% block title %}Trips{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-trips { background-image: url('{% static "images/fleet7.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; }
+    .badge { padding:3px 8px; border-radius:999px; font-size:.74rem; font-weight:700; }
+    .badge-pending { background:#fef3c7; color:#92400e; }
+    .badge-in-progress { background:#dbeafe; color:#1e40af; }
+    .badge-completed { background:#dcfce7; color:#166534; }
+    .badge-rejected { background:#fee2e2; color:#991b1b; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>Trips</h2>
+<section class="hero hero-trips">
+    <div>
+        <h2>Trip Operations</h2>
+        <p>Create and monitor dispatch progress across all active routes.</p>
+    </div>
+</section>
 <div class="actions">
     <a class="btn" href="{% url 'create_trip' %}">Create Trip</a>
     <a class="btn secondary" href="{% url 'manager_completed_trips' %}">Completed Trips Report</a>
 </div>
+<div class="panel">
 <table>
     <thead><tr><th>Trip ID</th><th>Driver</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>Status</th><th>Date</th></tr></thead>
     <tbody>
@@ -16,7 +34,17 @@
         <td>{{ trip.vehicle.plate_number }}</td>
         <td>{{ trip.origin }}</td>
         <td>{{ trip.destination }}</td>
-        <td>{{ trip.get_status_display }}</td>
+        <td>
+            {% if trip.status == 'pending' %}
+                <span class="badge badge-pending">Pending</span>
+            {% elif trip.status == 'in_progress' %}
+                <span class="badge badge-in-progress">In Progress</span>
+            {% elif trip.status == 'completed' %}
+                <span class="badge badge-completed">Completed</span>
+            {% else %}
+                <span class="badge badge-rejected">Rejected</span>
+            {% endif %}
+        </td>
         <td>{{ trip.created_at }}</td>
     </tr>
     {% empty %}
@@ -24,5 +52,5 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
 {% endblock %}
-

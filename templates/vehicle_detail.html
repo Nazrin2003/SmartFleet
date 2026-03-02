@@ -1,17 +1,37 @@
 {% extends "base_manager.html" %}
+{% load static %}
 {% block title %}Vehicle Detail{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-vehicle-detail { background-image: url('{% static "images/fleet3.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .meta-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-bottom:12px; }
+    .meta { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:10px; }
+    .meta h4 { font-size:.74rem; text-transform:uppercase; color:#7a6a96; margin-bottom:4px; }
+    .meta p { font-weight:700; }
+    .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; margin-bottom:12px; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>Vehicle: {{ vehicle.plate_number }}</h2>
-<p><strong>Make & Model:</strong> {{ vehicle.make_and_model|default:"-" }}</p>
-<p><strong>Model:</strong> {{ vehicle.model_name }}</p>
-<p><strong>Year:</strong> {{ vehicle.year_of_manufacture|default:"-" }}</p>
-<p><strong>Type:</strong> {{ vehicle.vehicle_type|default:"-" }}</p>
-<p><strong>Load Capacity:</strong> {{ vehicle.load_capacity|default:"-" }}</p>
-<p><strong>Usage Hours:</strong> {{ vehicle.usage_hours }}</p>
-<p><strong>Battery Status:</strong> {{ vehicle.battery_status|default:"-" }}</p>
-<p><strong>Status:</strong> {{ vehicle.get_status_display }}</p>
-<p><strong>Assigned Driver:</strong> {% if vehicle.assigned_driver %}{{ vehicle.assigned_driver.user.username }}{% else %}-{% endif %}</p>
+<section class="hero hero-vehicle-detail">
+    <div>
+        <h2>Vehicle {{ vehicle.plate_number }}</h2>
+        <p>Comprehensive record of health, usage, and trip activity.</p>
+    </div>
+</section>
 
+<div class="meta-grid">
+    <div class="meta"><h4>Make & Model</h4><p>{{ vehicle.make_and_model|default:"-" }}</p></div>
+    <div class="meta"><h4>Model</h4><p>{{ vehicle.model_name }}</p></div>
+    <div class="meta"><h4>Year</h4><p>{{ vehicle.year_of_manufacture|default:"-" }}</p></div>
+    <div class="meta"><h4>Type</h4><p>{{ vehicle.vehicle_type|default:"-" }}</p></div>
+    <div class="meta"><h4>Load Capacity</h4><p>{{ vehicle.load_capacity|default:"-" }}</p></div>
+    <div class="meta"><h4>Usage Hours</h4><p>{{ vehicle.usage_hours }}</p></div>
+    <div class="meta"><h4>Battery Status</h4><p>{{ vehicle.battery_status|default:"-" }}</p></div>
+    <div class="meta"><h4>Status</h4><p>{{ vehicle.get_status_display }}</p></div>
+    <div class="meta"><h4>Assigned Driver</h4><p>{% if vehicle.assigned_driver %}{{ vehicle.assigned_driver.user.username }}{% else %}-{% endif %}</p></div>
+</div>
+
+<div class="panel">
 <h3>Maintenance History</h3>
 <table>
     <thead><tr><th>Date</th><th>Notes</th><th>Risk</th><th>Status</th></tr></thead>
@@ -23,7 +43,9 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
 
+<div class="panel">
 <h3>Trip History</h3>
 <table>
     <thead><tr><th>Trip ID</th><th>Driver</th><th>Route</th><th>Status</th><th>Date</th></tr></thead>
@@ -35,7 +57,9 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
 
+<div class="panel">
 <h3>Fuel Logs</h3>
 <table>
     <thead><tr><th>Date</th><th>Driver</th><th>Liters</th><th>Cost</th></tr></thead>
@@ -47,4 +71,5 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
 {% endblock %}

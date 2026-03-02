@@ -1,15 +1,35 @@
 {% extends "base_driver.html" %}
+{% load static %}
 {% block title %}Trip Detail{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-detail { background-image: url('{% static "images/fleet7.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .detail-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-bottom:12px; }
+    .meta { background: rgba(255,255,255,.96); border:1px solid #eadff8; border-radius:12px; padding:10px; }
+    .meta h4 { font-size:.75rem; color:#7a6a96; text-transform:uppercase; margin-bottom:4px; }
+    .meta p { font-weight:700; }
+    .panel { background: rgba(255,255,255,.96); border:1px solid #eadff8; border-radius:12px; padding:12px; margin-bottom:12px; }
+    .status-pill { display:inline-block; padding:4px 10px; border-radius:999px; font-size:.78rem; font-weight:700; background:#ede9fe; color:#5b21b6; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>Trip #{{ trip.id }}</h2>
-<p><strong>Route:</strong> {{ trip.origin }} to {{ trip.destination }}</p>
-<p><strong>Vehicle:</strong> {{ trip.vehicle.plate_number }}</p>
-<p><strong>Status:</strong> {{ trip.get_status_display }}</p>
-<p><strong>Load:</strong> {{ trip.load_details|default:"-" }}</p>
-<p><strong>Estimated distance:</strong> {{ trip.estimated_distance_km }} km</p>
-<p><strong>Expected fuel:</strong> {{ trip.expected_fuel_liters }} liters</p>
+<section class="hero hero-detail">
+    <div>
+        <h2>Trip #{{ trip.id }}</h2>
+        <p>Route: {{ trip.origin }} to {{ trip.destination }}</p>
+    </div>
+</section>
+
+<div class="detail-grid">
+    <div class="meta"><h4>Status</h4><p><span class="status-pill">{{ trip.get_status_display }}</span></p></div>
+    <div class="meta"><h4>Vehicle</h4><p>{{ trip.vehicle.plate_number }}</p></div>
+    <div class="meta"><h4>Load</h4><p>{{ trip.load_details|default:"-" }}</p></div>
+    <div class="meta"><h4>Distance</h4><p>{{ trip.estimated_distance_km|default:"-" }} km</p></div>
+    <div class="meta"><h4>Expected Fuel</h4><p>{{ trip.expected_fuel_liters|default:"-" }} L</p></div>
+</div>
 
 {% if trip.status == 'pending' %}
+<div class="panel">
 <form method="post" style="display:inline-block;">
     {% csrf_token %}
     <input type="hidden" name="action" value="accept">
@@ -20,13 +40,17 @@
     <input type="hidden" name="action" value="reject">
     <button class="btn secondary" type="submit">Reject</button>
 </form>
+</div>
 {% elif trip.status == 'in_progress' %}
+<div class="panel">
 <form method="post">
     {% csrf_token %}
     <input type="hidden" name="action" value="complete">
     <button class="btn" type="submit">Complete</button>
 </form>
+</div>
 {% elif trip.status == 'completed' %}
+<div class="panel">
 <h3>Trip Summary</h3>
 <p><strong>Completed At:</strong> {{ trip.completed_at }}</p>
 <p><strong>Fuel Used:</strong> {{ trip.fuel_used_liters }}</p>
@@ -40,6 +64,6 @@
 <p><strong>Weather:</strong> {{ trip.completion.weather }}</p>
 <p><strong>Road Condition:</strong> {{ trip.completion.road_condition }}</p>
 {% endif %}
+</div>
 {% endif %}
 {% endblock %}
-

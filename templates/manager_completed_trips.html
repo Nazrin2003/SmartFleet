@@ -1,33 +1,50 @@
 {% extends "base_manager.html" %}
+{% load static %}
 {% block title %}Completed Trips Report{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-report { background-image: url('{% static "images/fleet2.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .filter-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap:8px; align-items:end; }
+    .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; }
+    .badge { padding:3px 8px; border-radius:999px; font-size:.74rem; font-weight:700; background:#dcfce7; color:#166534; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>Completed Trips Report</h2>
+<section class="hero hero-report">
+    <div>
+        <h2>Completed Trips Report</h2>
+        <p>Analyze closed trips with filters and export-ready output.</p>
+    </div>
+</section>
 <form class="filters" method="get">
-    <input type="text" name="trip_id" placeholder="Trip ID" value="{{ request.GET.trip_id }}">
-    <select name="vehicle">
-        <option value="">All Vehicles</option>
-        {% for v in vehicles %}
-        <option value="{{ v.id }}" {% if request.GET.vehicle == v.id|stringformat:"s" %}selected{% endif %}>{{ v.plate_number }}</option>
-        {% endfor %}
-    </select>
-    <select name="driver">
-        <option value="">All Drivers</option>
-        {% for d in drivers %}
-        <option value="{{ d.id }}" {% if request.GET.driver == d.id|stringformat:"s" %}selected{% endif %}>{{ d.user.username }}</option>
-        {% endfor %}
-    </select>
-    <input type="date" name="date_from" value="{{ request.GET.date_from }}">
-    <input type="date" name="date_to" value="{{ request.GET.date_to }}">
-    <select name="sort">
-        <option value="date_desc" {% if request.GET.sort != 'date_asc' %}selected{% endif %}>Date Desc</option>
-        <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>Date Asc</option>
-    </select>
-    <button class="btn" type="submit">Filter</button>
+    <div class="filter-grid">
+        <p><label>Trip ID</label><br><input type="text" name="trip_id" placeholder="Trip ID" value="{{ request.GET.trip_id }}"></p>
+        <p><label>Vehicle</label><br><select name="vehicle">
+            <option value="">All Vehicles</option>
+            {% for v in vehicles %}
+            <option value="{{ v.id }}" {% if request.GET.vehicle == v.id|stringformat:"s" %}selected{% endif %}>{{ v.plate_number }}</option>
+            {% endfor %}
+        </select></p>
+        <p><label>Driver</label><br><select name="driver">
+            <option value="">All Drivers</option>
+            {% for d in drivers %}
+            <option value="{{ d.id }}" {% if request.GET.driver == d.id|stringformat:"s" %}selected{% endif %}>{{ d.user.username }}</option>
+            {% endfor %}
+        </select></p>
+        <p><label>Date From</label><br><input type="date" name="date_from" value="{{ request.GET.date_from }}"></p>
+        <p><label>Date To</label><br><input type="date" name="date_to" value="{{ request.GET.date_to }}"></p>
+        <p><label>Sort</label><br><select name="sort">
+            <option value="date_desc" {% if request.GET.sort != 'date_asc' %}selected{% endif %}>Date Desc</option>
+            <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>Date Asc</option>
+        </select></p>
+        <p><button class="btn" type="submit">Filter</button></p>
+    </div>
 </form>
 <div class="actions">
     <a class="btn" href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
     <button class="btn secondary" type="button" onclick="window.print()">Print Report</button>
 </div>
+<div class="panel">
 <table>
     <thead><tr><th>Trip ID</th><th>Driver</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>Date</th><th>Fuel Used</th><th>Status</th></tr></thead>
     <tbody>
@@ -40,11 +57,12 @@
         <td>{{ trip.destination }}</td>
         <td>{{ trip.completed_at }}</td>
         <td>{{ trip.fuel_used_liters }}</td>
-        <td>{{ trip.get_status_display }}</td>
+        <td><span class="badge">{{ trip.get_status_display }}</span></td>
     </tr>
     {% empty %}
     <tr><td colspan="8">No completed trips found.</td></tr>
     {% endfor %}
     </tbody>
 </table>
+</div>
 {% endblock %}

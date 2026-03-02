@@ -1,13 +1,32 @@
 {% extends "base_driver.html" %}
+{% load static %}
 {% block title %}Vehicle Details{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-vehicle { background-image: url('{% static "images/fleet1.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .details-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+    .meta { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:11px; }
+    .meta h4 { font-size:.75rem; text-transform:uppercase; color:#7a6a96; margin-bottom:4px; }
+    .meta p { font-weight:700; }
+    .state-ok { color:#166534; }
+    .state-bad { color:#991b1b; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>Vehicle Details</h2>
+<section class="hero hero-vehicle">
+    <div>
+        <h2>Vehicle Details</h2>
+        <p>View your currently assigned vehicle and maintenance state.</p>
+    </div>
+</section>
 {% if vehicle %}
-<p><strong>Plate:</strong> {{ vehicle.plate_number }}</p>
-<p><strong>Model:</strong> {{ vehicle.model_name }}</p>
-<p><strong>Status:</strong> {{ vehicle.get_status_display }}</p>
-<p><strong>Maintenance Required:</strong> {% if vehicle.status == 'maintenance_required' or vehicle.status == 'maintenance' %}Yes{% else %}No{% endif %}</p>
+<div class="details-grid">
+    <div class="meta"><h4>Plate</h4><p>{{ vehicle.plate_number }}</p></div>
+    <div class="meta"><h4>Model</h4><p>{{ vehicle.model_name }}</p></div>
+    <div class="meta"><h4>Status</h4><p>{{ vehicle.get_status_display }}</p></div>
+    <div class="meta"><h4>Maintenance Required</h4><p class="{% if vehicle.status == 'maintenance_required' or vehicle.status == 'maintenance' %}state-bad{% else %}state-ok{% endif %}">{% if vehicle.status == 'maintenance_required' or vehicle.status == 'maintenance' %}Yes{% else %}No{% endif %}</p></div>
+</div>
 {% else %}
-<p>No vehicle assigned.</p>
+<div class="meta"><p>No vehicle assigned.</p></div>
 {% endif %}
 {% endblock %}

@@ -1,7 +1,20 @@
 {% extends "base_manager.html" %}
+{% load static %}
 {% block title %}Assign Vehicle{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-assign { background-image: url('{% static "images/fleet6.jpg" %}'); min-height: 145px; display:flex; align-items:center; }
+    .form-panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:14px; max-width:700px; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>Assign Vehicle to {{ driver.user.username }}</h2>
+<section class="hero hero-assign">
+    <div>
+        <h2>Assign Vehicle</h2>
+        <p>Assign available fleet units to {{ driver.user.username }}.</p>
+    </div>
+</section>
+<div class="form-panel">
 <form method="post">
     {% csrf_token %}
     <p>
@@ -16,5 +29,5 @@
     <button class="btn" type="submit">Assign</button>
     <a class="btn secondary" href="{% url 'driver_detail' driver.id %}">Cancel</a>
 </form>
+</div>
 {% endblock %}
-

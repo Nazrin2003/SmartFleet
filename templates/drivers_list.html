@@ -1,7 +1,24 @@
 {% extends "base_manager.html" %}
+{% load static %}
 {% block title %}Drivers{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-drivers { background-image: url('{% static "images/fleet4.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; }
+    .badge { padding:3px 8px; border-radius:999px; font-size:.74rem; font-weight:700; }
+    .badge-complete { background:#dcfce7; color:#166534; }
+    .badge-incomplete { background:#fff7ed; color:#9a3412; }
+    .table-link { color:#6f42c1; font-weight:700; text-decoration:none; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>Drivers</h2>
+<section class="hero hero-drivers">
+    <div>
+        <h2>Driver Management</h2>
+        <p>Review profiles and assignment readiness before dispatch.</p>
+    </div>
+</section>
+<div class="panel">
 <table>
     <thead>
     <tr>
@@ -15,13 +32,14 @@
         <td>{{ driver.license_number|default:'-' }}</td>
         <td>{{ driver.phone_number|default:'-' }}</td>
         <td>{% if driver.assigned_vehicle %}{{ driver.assigned_vehicle.plate_number }}{% else %}-{% endif %}</td>
-        <td>{% if driver.profile_complete %}Complete{% else %}Incomplete{% endif %}</td>
+        <td>{% if driver.profile_complete %}<span class="badge badge-complete">Complete</span>{% else %}<span class="badge badge-incomplete">Incomplete</span>{% endif %}</td>
         <td>{{ driver.get_status_display }}</td>
-        <td><a href="{% url 'driver_detail' driver.id %}">View</a></td>
+        <td><a class="table-link" href="{% url 'driver_detail' driver.id %}">View</a></td>
     </tr>
     {% empty %}
     <tr><td colspan="7">No drivers found.</td></tr>
     {% endfor %}
     </tbody>
 </table>
+</div>
 {% endblock %}

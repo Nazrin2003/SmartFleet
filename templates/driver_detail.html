@@ -1,15 +1,35 @@
 {% extends "base_manager.html" %}
+{% load static %}
 {% block title %}Driver Detail{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-driver-detail { background-image: url('{% static "images/fleet5.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .meta-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-bottom:12px; }
+    .meta { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:10px; }
+    .meta h4 { font-size:.74rem; text-transform:uppercase; color:#7a6a96; margin-bottom:4px; }
+    .meta p { font-weight:700; }
+    .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; margin-bottom:12px; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>Driver: {{ driver.user.username }}</h2>
-<p><strong>License:</strong> {{ driver.license_number|default:'-' }}</p>
-<p><strong>License Expiry:</strong> {{ driver.license_expiry_date|default:'-' }}</p>
-<p><strong>Phone:</strong> {{ driver.phone_number|default:'-' }}</p>
-<p><strong>Address:</strong> {{ driver.address|default:'-' }}</p>
-<p><strong>Experience (years):</strong> {{ driver.years_of_experience|default:'-' }}</p>
-<p><strong>Emergency Contact:</strong> {{ driver.emergency_contact_name|default:'-' }} ({{ driver.emergency_contact_phone|default:'-' }})</p>
-<p><strong>Assigned Vehicle:</strong> {% if driver.assigned_vehicle %}{{ driver.assigned_vehicle.plate_number }}{% else %}-{% endif %}</p>
-<p><strong>Status:</strong> {{ driver.get_status_display }}</p>
+<section class="hero hero-driver-detail">
+    <div>
+        <h2>Driver {{ driver.user.username }}</h2>
+        <p>Profile summary, assignment controls, and history snapshots.</p>
+    </div>
+</section>
+
+<div class="meta-grid">
+    <div class="meta"><h4>License</h4><p>{{ driver.license_number|default:'-' }}</p></div>
+    <div class="meta"><h4>License Expiry</h4><p>{{ driver.license_expiry_date|default:'-' }}</p></div>
+    <div class="meta"><h4>Phone</h4><p>{{ driver.phone_number|default:'-' }}</p></div>
+    <div class="meta"><h4>Address</h4><p>{{ driver.address|default:'-' }}</p></div>
+    <div class="meta"><h4>Experience (Years)</h4><p>{{ driver.years_of_experience|default:'-' }}</p></div>
+    <div class="meta"><h4>Emergency Contact</h4><p>{{ driver.emergency_contact_name|default:'-' }} ({{ driver.emergency_contact_phone|default:'-' }})</p></div>
+    <div class="meta"><h4>Assigned Vehicle</h4><p>{% if driver.assigned_vehicle %}{{ driver.assigned_vehicle.plate_number }}{% else %}-{% endif %}</p></div>
+    <div class="meta"><h4>Status</h4><p>{{ driver.get_status_display }}</p></div>
+</div>
+
 <div class="actions">
     <a class="btn" href="{% url 'assign_vehicle' driver.id %}">Assign Vehicle</a>
     {% if driver.assigned_vehicle %}
@@ -17,6 +37,7 @@
     {% endif %}
 </div>
 
+<div class="panel">
 <h3>Trip History</h3>
 <table>
     <thead><tr><th>Trip ID</th><th>Vehicle</th><th>Route</th><th>Status</th><th>Date</th></tr></thead>
@@ -28,7 +49,9 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
 
+<div class="panel">
 <h3>Fuel Logs</h3>
 <table>
     <thead><tr><th>Date</th><th>Vehicle</th><th>Liters</th><th>Cost</th></tr></thead>
@@ -40,7 +63,9 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
 
+<div class="panel">
 <h3>Maintenance Alerts</h3>
 <table>
     <thead><tr><th>Date</th><th>Vehicle</th><th>Notes</th><th>Status</th></tr></thead>
@@ -52,4 +77,5 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
 {% endblock %}

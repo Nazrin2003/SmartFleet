@@ -1,14 +1,33 @@
 {% extends "base_driver.html" %}
+{% load static %}
 {% block title %}My Profile{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-profile { background-image: url('{% static "images/fleet.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .status { border-radius:10px; padding:8px 10px; margin-bottom:10px; font-weight:600; }
+    .status-ok { background:#dcfce7; border:1px solid #86efac; color:#166534; }
+    .status-warn { background:#fff7ed; border:1px solid #fdba74; color:#9a3412; }
+    .form-panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:14px; max-width: 920px; }
+    .form-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:8px 14px; }
+    .form-grid p { margin:0; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>My Driver Profile</h2>
+<section class="hero hero-profile">
+    <div>
+        <h2>My Driver Profile</h2>
+        <p>Keep your details complete so managers can assign vehicles without delay.</p>
+    </div>
+</section>
 {% if profile_complete %}
-<p style="color:#065f46;">Profile status: Complete</p>
+<p class="status status-ok">Profile status: Complete</p>
 {% else %}
-<p style="color:#b45309;">Profile status: Incomplete. Complete this form before vehicle assignment.</p>
+<p class="status status-warn">Profile status: Incomplete. Complete this form before vehicle assignment.</p>
 {% endif %}
+<div class="form-panel">
 <form method="post">
     {% csrf_token %}
+    <div class="form-grid">
     <p><label>License Number</label><br><input type="text" name="license_number" required value="{{ driver.license_number|default:'' }}"></p>
     <p><label>License Expiry Date</label><br><input type="date" name="license_expiry_date" value="{{ driver.license_expiry_date|date:'Y-m-d' }}"></p>
     <p><label>Phone Number</label><br><input type="text" name="phone_number" required value="{{ driver.phone_number|default:'' }}"></p>
@@ -16,6 +35,8 @@
     <p><label>Years of Experience</label><br><input type="number" name="years_of_experience" required value="{{ driver.years_of_experience|default:'' }}"></p>
     <p><label>Emergency Contact Name</label><br><input type="text" name="emergency_contact_name" required value="{{ driver.emergency_contact_name|default:'' }}"></p>
     <p><label>Emergency Contact Phone</label><br><input type="text" name="emergency_contact_phone" required value="{{ driver.emergency_contact_phone|default:'' }}"></p>
+    </div>
     <button class="btn" type="submit">Save Profile</button>
 </form>
+</div>
 {% endblock %}

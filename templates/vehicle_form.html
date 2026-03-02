@@ -1,9 +1,26 @@
 {% extends "base_manager.html" %}
+{% load static %}
 {% block title %}{% if mode == 'create' %}Add Vehicle{% else %}Edit Vehicle{% endif %}{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-vehicle-form { background-image: url('{% static "images/fleet2.jpg" %}'); min-height: 145px; display:flex; align-items:center; }
+    .form-panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:14px; max-width: 980px; }
+    .form-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:8px 14px; }
+    .form-grid p { margin: 0; }
+    .hint { font-size:.83rem; color:#64748b; margin:8px 0; }
+</style>
+{% endblock %}
 {% block content %}
-<h2>{% if mode == 'create' %}Add Vehicle{% else %}Edit Vehicle{% endif %}</h2>
+<section class="hero hero-vehicle-form">
+    <div>
+        <h2>{% if mode == 'create' %}Add Vehicle{% else %}Edit Vehicle{% endif %}</h2>
+        <p>Maintain clean master data for accurate assignments and reporting.</p>
+    </div>
+</section>
+<div class="form-panel">
 <form method="post">
     {% csrf_token %}
+    <div class="form-grid">
     <p><label>Plate Number</label><br><input type="text" name="plate_number" required value="{{ vehicle.plate_number|default:'' }}"></p>
     <p><label>Make and Model</label><br><input type="text" name="make_and_model" value="{{ vehicle.make_and_model|default:'' }}"></p>
     <p><label>Model</label><br><input type="text" name="model_name" required value="{{ vehicle.model_name|default:'' }}"></p>
@@ -22,10 +39,12 @@
             <option value="maintenance_required" {% if vehicle.status == 'maintenance_required' %}selected{% endif %}>Maintenance Required</option>
         </select>
     </p>
-    <p style="font-size:12px; color:#64748b;">
+    </div>
+    <p class="hint">
         Trip and maintenance metrics (engine temp, tire pressure, fuel consumption, weather, anomalies, predictive score, etc.) are captured during trip completion and maintenance workflows.
     </p>
     <button class="btn" type="submit">Save</button>
     <a class="btn secondary" href="{% url 'vehicles_page' %}">Cancel</a>
 </form>
+</div>
 {% endblock %}
