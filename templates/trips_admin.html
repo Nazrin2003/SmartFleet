@@ -1,0 +1,55 @@
+{% extends "base_admin.html" %}
+{% block title %}All Trips{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <h2>All Trips</h2>
+    <a class="btn info" href="{% url 'trips_report_admin' %}?{{ request.GET.urlencode }}">Download Report (CSV)</a>
+</div>
+<form class="filters" method="get">
+    <input type="text" name="trip_id" placeholder="Trip ID" value="{{ request.GET.trip_id }}">
+    <select name="driver">
+        <option value="">All Drivers</option>
+        {% for d in drivers %}
+        <option value="{{ d.id }}" {% if request.GET.driver == d.id|stringformat:"s" %}selected{% endif %}>{{ d.user.username }}</option>
+        {% endfor %}
+    </select>
+    <select name="vehicle">
+        <option value="">All Vehicles</option>
+        {% for v in vehicles %}
+        <option value="{{ v.id }}" {% if request.GET.vehicle == v.id|stringformat:"s" %}selected{% endif %}>{{ v.plate_number }}</option>
+        {% endfor %}
+    </select>
+    <select name="status">
+        <option value="">All Status</option>
+        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+        <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+    </select>
+    <input type="date" name="date_from" value="{{ request.GET.date_from }}">
+    <input type="date" name="date_to" value="{{ request.GET.date_to }}">
+    <select name="sort">
+        <option value="date_desc" {% if request.GET.sort != 'date_asc' %}selected{% endif %}>Newest First</option>
+        <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>Oldest First</option>
+    </select>
+    <button class="btn" type="submit">Apply</button>
+</form>
+<table>
+    <thead><tr><th>ID</th><th>Driver</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>Status</th><th>Created</th></tr></thead>
+    <tbody>
+    {% for trip in trips %}
+    <tr>
+        <td>{{ trip.id }}</td>
+        <td>{{ trip.driver.user.username }}</td>
+        <td>{{ trip.vehicle.plate_number }}</td>
+        <td>{{ trip.origin }}</td>
+        <td>{{ trip.destination }}</td>
+        <td>{{ trip.get_status_display }}</td>
+        <td>{{ trip.created_at }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">No trips found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

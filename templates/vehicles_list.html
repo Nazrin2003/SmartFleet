@@ -10,7 +10,19 @@
     .status-assigned { background:#dbeafe; color:#1e40af; }
     .status-in-trip { background:#ede9fe; color:#5b21b6; }
     .status-maintenance, .status-maintenance-required { background:#fee2e2; color:#991b1b; }
-    .table-link { color:#6f42c1; font-weight:700; text-decoration:none; }
+    .actions-cell { display:flex; flex-wrap:wrap; gap:6px; }
+    .action-btn {
+        display:inline-block;
+        padding:5px 9px;
+        border-radius:8px;
+        color:#fff;
+        text-decoration:none;
+        font-size:.78rem;
+        font-weight:700;
+    }
+    .action-view { background:linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%); }
+    .action-edit { background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+    .action-delete { background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
 </style>
 {% endblock %}
 {% block content %}
@@ -21,7 +33,7 @@
     </div>
 </section>
 <div class="actions">
-    <a class="btn" href="{% url 'vehicle_create' %}">Add Vehicle</a>
+    <a class="btn success" href="{% url 'vehicle_create' %}">Add Vehicle</a>
 </div>
 <div class="panel">
 <table>
@@ -45,10 +57,10 @@
                 <span class="status-badge status-{{ vehicle.status|slugify }}">{{ vehicle.get_status_display }}</span>
             </td>
             <td>{% if vehicle.assigned_driver %}{{ vehicle.assigned_driver.user.username }}{% else %}-{% endif %}</td>
-            <td>
-                <a class="table-link" href="{% url 'vehicle_detail' vehicle.id %}">View</a> |
-                <a class="table-link" href="{% url 'vehicle_edit' vehicle.id %}">Edit</a> |
-                <a class="table-link" href="{% url 'vehicle_delete' vehicle.id %}" onclick="return confirm('Delete vehicle?')">Delete</a>
+            <td class="actions-cell">
+                <a class="action-btn action-view" href="{% url 'vehicle_detail' vehicle.id %}">View</a>
+                <a class="action-btn action-edit" href="{% url 'vehicle_edit' vehicle.id %}">Edit</a>
+                <a class="action-btn action-delete" href="{% url 'vehicle_delete' vehicle.id %}" onclick="return confirm('Delete vehicle?')">Delete</a>
             </td>
         </tr>
         {% empty %}

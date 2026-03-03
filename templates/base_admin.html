@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin | SMARTFLEET{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(180deg, #fdfaf6 0%, #f6f0ff 48%, #eef2ff 100%); color: #2d1b4e; }
+        .top {
+            background: linear-gradient(135deg, #2d1b4e 0%, #6f42c1 100%);
+            color: #fff;
+            padding: 14px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 24px rgba(45, 27, 78, .24);
+        }
+        .top-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            letter-spacing: .4px;
+        }
+        .top-title i { color: #ff89a6; }
+        .top-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+        }
+        .logout-btn {
+            color: #fff;
+            text-decoration: none;
+            background: rgba(255, 137, 166, .22);
+            border: 1px solid rgba(255, 182, 202, .45);
+            border-radius: 10px;
+            padding: 7px 12px;
+            font-weight: 600;
+        }
+        .layout { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 58px); }
+        .sidebar {
+            background: linear-gradient(180deg, rgba(255,255,255,.97) 0%, rgba(247,241,255,.94) 100%);
+            border-right: 1px solid #e7d8fb;
+            padding: 18px 14px;
+        }
+        .sidebar h4 {
+            font-family: 'Poppins', sans-serif;
+            font-size: .85rem;
+            color: #6f42c1;
+            letter-spacing: .5px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #4a3568;
+            border-radius: 12px;
+            padding: 13px 14px;
+            margin-bottom: 10px;
+            font-weight: 700;
+            border: 1px solid #eadff8;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(111, 66, 193, .08);
+            transition: all .2s ease;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: linear-gradient(135deg, #6f42c1 0%, #9b59b6 100%);
+            color: #fff;
+            border-color: #6f42c1;
+            transform: translateX(2px);
+        }
+        .main { padding: 16px 18px; }
+        .messages { margin-bottom: 10px; }
+        .message { background: linear-gradient(135deg, #ecfeff 0%, #f3e8ff 100%); border: 1px solid #c4b5fd; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; }
+        .btn { background: linear-gradient(135deg, #6f42c1 0%, #9b59b6 100%); color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 8px; border: 0; cursor: pointer; font-weight: 600; display: inline-block; }
+        .btn.secondary { background: linear-gradient(135deg, #4b5563 0%, #334155 100%); }
+        .btn.success { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
+        .btn.info { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        .btn.warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .btn.danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #eadff8; border-radius: 12px; overflow: hidden; }
+        th { background: linear-gradient(135deg, #f3e8ff 0%, #ffeaf3 100%); text-transform: uppercase; font-size: .8rem; }
+        th, td { padding: 10px; border-bottom: 1px solid #f1e9fb; text-align: left; }
+        tr:last-child td { border-bottom: 0; }
+        input, select { border: 1px solid #d7c8ef; border-radius: 8px; padding: 8px 10px; width: 100%; max-width: 420px; }
+        @media (max-width: 980px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { border-right: 0; border-bottom: 1px solid #eadff8; }
+            .top-user span { display: none; }
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    <div class="top">
+        <div class="top-title"><i class="fas fa-user-shield"></i> SMARTFLEET Admin Portal</div>
+        <div class="top-user"><span>{% if reg %}{{ reg.user.username }}{% endif %}</span> <a href="{% url 'logout' %}" class="logout-btn">Logout</a></div>
+    </div>
+    <div class="layout">
+        <aside class="sidebar">
+            <h4>Navigation</h4>
+            <a href="{% url 'admin_home' %}" class="{% if request.resolver_match.url_name == 'admin_home' %}active{% endif %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="{% url 'manager_list_adm' %}" class="{% if request.resolver_match.url_name == 'manager_list_adm' or request.resolver_match.url_name == 'add_manager_adm' or request.resolver_match.url_name == 'edit_manager_adm' %}active{% endif %}"><i class="fas fa-user-tie"></i> Managers</a>
+            <a href="{% url 'driver_list_adm' %}" class="{% if request.resolver_match.url_name == 'driver_list_adm' or request.resolver_match.url_name == 'add_driver_adm' or request.resolver_match.url_name == 'edit_driver_adm' %}active{% endif %}"><i class="fas fa-id-badge"></i> Drivers</a>
+            <a href="{% url 'trips_admin' %}" class="{% if request.resolver_match.url_name == 'trips_admin' %}active{% endif %}"><i class="fas fa-route"></i> Trips</a>
+        </aside>
+        <main class="main">
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

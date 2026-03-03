@@ -1,0 +1,101 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-admin {
+        background-image: url('{% static "images/fleet7.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        min-height: 240px;
+        border-radius: 14px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 14px;
+        box-shadow: 0 10px 24px rgba(45, 27, 78, .2);
+    }
+    .hero-admin::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(45, 27, 78, .88), rgba(111, 66, 193, .78));
+    }
+    .hero-content {
+        position: relative;
+        z-index: 1;
+        color: #fff;
+        padding: 22px;
+        max-width: 680px;
+    }
+    .hero-content h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 2rem;
+        margin-bottom: 6px;
+    }
+    .hero-content p { opacity: .95; line-height: 1.55; }
+    .hero-actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero-btn {
+        text-decoration: none;
+        color: #fff;
+        padding: 9px 13px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,.4);
+        font-weight: 700;
+        background: rgba(255,255,255,.12);
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .hero-btn.primary { background: linear-gradient(135deg, #ff6b9d 0%, #f97316 100%); border-color: transparent; }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 12px;
+    }
+    .stat-card {
+        background: #fff;
+        border: 1px solid #eadff8;
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 6px 18px rgba(111, 66, 193, .1);
+    }
+    .stat-card h4 {
+        font-size: .76rem;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        color: #7a6a96;
+        margin-bottom: 6px;
+    }
+    .stat-card p {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.6rem;
+        color: #2d1b4e;
+        font-weight: 700;
+    }
+    .stat-managers { border-left: 5px solid #6f42c1; }
+    .stat-drivers { border-left: 5px solid #ec4899; }
+    .stat-vehicles { border-left: 5px solid #2563eb; }
+    .stat-trips { border-left: 5px solid #16a34a; }
+</style>
+{% endblock %}
+{% block content %}
+<section class="hero-admin">
+    <div class="hero-content">
+        <h2>Admin Control Center</h2>
+        <p>Manage users and monitor the full fleet from one place. Use the quick actions below to jump to day-to-day admin tasks.</p>
+        <div class="hero-actions">
+            <a class="hero-btn primary" href="{% url 'add_manager_adm' %}"><i class="fas fa-user-plus"></i> Add Manager</a>
+            <a class="hero-btn primary" href="{% url 'add_driver_adm' %}"><i class="fas fa-id-card"></i> Add Driver</a>
+            <a class="hero-btn" href="{% url 'trips_admin' %}"><i class="fas fa-route"></i> View Trips</a>
+            <a class="hero-btn" href="{% url 'trips_report_admin' %}"><i class="fas fa-file-csv"></i> Download Report</a>
+        </div>
+    </div>
+</section>
+
+<div class="stats-grid">
+    <div class="stat-card stat-managers"><h4>Managers</h4><p>{{ total_managers }}</p></div>
+    <div class="stat-card stat-drivers"><h4>Drivers</h4><p>{{ total_drivers }}</p></div>
+    <div class="stat-card stat-vehicles"><h4>Vehicles</h4><p>{{ total_vehicles }}</p></div>
+    <div class="stat-card stat-trips"><h4>Total Trips</h4><p>{{ total_trips }}</p></div>
+</div>
+{% endblock %}

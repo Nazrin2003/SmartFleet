@@ -25,12 +25,12 @@
             <option value="date_desc" {% if request.GET.sort != 'date_asc' %}selected{% endif %}>Date Desc</option>
             <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>Date Asc</option>
         </select></p>
-        <p><button class="btn" type="submit">Filter</button></p>
+        <p><button class="btn info" type="submit">Filter</button></p>
     </div>
 </form>
 <div class="actions">
-    <a class="btn" href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
-    <button class="btn secondary" type="button" onclick="window.print()">Print</button>
+    <a class="btn success" href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
+    <button class="btn warning" type="button" onclick="window.print()">Print</button>
 </div>
 <div class="panel">
 <table>

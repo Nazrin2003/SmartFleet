@@ -1,68 +1,293 @@
 {% extends "base_manager.html" %}
 {% load static %}
-{% block title %}Manager Dashboard{% endblock %}
+
+{% block title %}Manager Dashboard | SMARTFLEET{% endblock %}
+
 {% block extra_styles %}
 <style>
-    .hero-manager { background-image: url('{% static "images/fleet4.jpg" %}'); min-height: 180px; display:flex; align-items:center; }
-    .hero-manager p { max-width: 700px; }
-    .alerts ul { margin: 0; padding-left: 18px; }
-    .alerts li { margin-bottom: 6px; }
+    .hero-section {
+        background-image: url('{% static "images/fleet4.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        min-height: 230px;
+        border-radius: 14px;
+        margin-bottom: 1rem;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 6px 18px rgba(111, 66, 193, 0.12);
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(45, 27, 78, 0.88) 0%, rgba(111, 66, 193, 0.82) 50%, rgba(155, 89, 182, 0.75) 100%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 1.2rem 1.3rem;
+        max-width: 760px;
+    }
+
+    .hero-content h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: #FFFFFF;
+        margin-bottom: 0.45rem;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-content p {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.95);
+        line-height: 1.5;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 0.85rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: 2px solid transparent;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: linear-gradient(135deg, #6F42C1, #FF6B9D);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(111, 66, 193, 0.2);
+        border-color: #6F42C1;
+    }
+
+    .stat-card h3 {
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #9CA3AF;
+        margin-bottom: 0.35rem;
+        font-weight: 600;
+    }
+
+    .stat-card p {
+        font-size: 1.08rem;
+        font-weight: 800;
+        color: #1F2937;
+        font-family: 'Poppins', sans-serif;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+
+    .stat-card.warn { border-color: #F59E0B; }
+    .stat-card.danger { border-color: #EF4444; }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 0.65rem;
+        margin-bottom: 1rem;
+    }
+
+    .action-btn {
+        background: linear-gradient(135deg, #6F42C1 0%, #9B59B6 100%);
+        color: white;
+        padding: 0.72rem 0.85rem;
+        border-radius: 9px;
+        text-decoration: none;
+        font-weight: 600;
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(111, 66, 193, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        font-size: 0.88rem;
+    }
+
+    .action-btn:hover {
+        background: linear-gradient(135deg, #5E35A8 0%, #8E44AD 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
+    }
+
+    .action-btn.secondary {
+        background: linear-gradient(135deg, #4B5563 0%, #334155 100%);
+        box-shadow: 0 4px 12px rgba(75, 85, 99, 0.3);
+    }
+
+    .action-btn.secondary:hover {
+        background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
+        box-shadow: 0 6px 20px rgba(75, 85, 99, 0.4);
+    }
+
+    .action-btn i { font-size: 1.1rem; }
+
+    .alerts-section {
+        background: white;
+        border-radius: 14px;
+        padding: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    }
+
+    .section-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .section-title i { color: #6F42C1; }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .modern-table thead {
+        background: linear-gradient(135deg, #F3E8FF 0%, #FCE7F3 100%);
+    }
+
+    .modern-table th {
+        padding: 0.72rem 0.8rem;
+        text-align: left;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #4A3568;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #E9D5FF;
+    }
+
+    .modern-table td {
+        padding: 0.72rem 0.8rem;
+        color: #4B5563;
+        font-size: 0.95rem;
+    }
+
+    .modern-table tbody tr:hover {
+        background: linear-gradient(135deg, #FAFAFA 0%, #F9F5FF 100%);
+    }
+
+    @media (max-width: 768px) {
+        .hero-section { min-height: 190px; }
+        .hero-content { padding: 1rem; }
+        .hero-content h2 { font-size: 1.28rem; }
+        .hero-content p { font-size: 0.88rem; }
+        .stats-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+        .actions-grid { grid-template-columns: 1fr; }
+    }
 </style>
 {% endblock %}
+
 {% block content %}
-<section class="hero hero-manager">
-    <div>
-        <h2>Fleet Manager Dashboard</h2>
-        <p>Track operations, vehicle health, and fuel anomalies in one place.</p>
+<section class="hero-section">
+    <div class="hero-content">
+        <h2>Welcome Back, Manager!</h2>
+        <p>Monitor fleet activity, dispatch trips, and keep operations running smoothly from one dashboard.</p>
     </div>
 </section>
 
-<div class="dash-grid">
-    <div class="dash-card">
+<div class="stats-grid">
+    <div class="stat-card">
         <h3>Total Vehicles</h3>
         <p>{{ total_vehicles }}</p>
     </div>
-    <div class="dash-card">
+    <div class="stat-card">
         <h3>Total Drivers</h3>
         <p>{{ total_drivers }}</p>
     </div>
-    <div class="dash-card">
+    <div class="stat-card">
         <h3>Active Trips</h3>
         <p>{{ active_trips }}</p>
     </div>
-    <div class="dash-card">
+    <div class="stat-card warn">
         <h3>Pending Trips</h3>
         <p>{{ pending_trips }}</p>
     </div>
-    <div class="dash-card alert">
-        <h3>Vehicles In Maintenance</h3>
+    <div class="stat-card danger">
+        <h3>In Maintenance</h3>
         <p>{{ vehicles_in_maintenance }}</p>
     </div>
-    <div class="dash-card alert">
+    <div class="stat-card danger">
         <h3>Fuel Alerts</h3>
         <p>{{ fuel_alerts }}</p>
     </div>
 </div>
 
-<div class="actions">
-    <a class="btn" href="{% url 'vehicles_page' %}">Vehicles</a>
-    <a class="btn" href="{% url 'drivers_page' %}">Drivers</a>
-    <a class="btn" href="{% url 'trips_page' %}">Trips</a>
-    <a class="btn secondary" href="{% url 'manager_completed_trips' %}">Reports</a>
+<div class="actions-grid">
+    <a class="action-btn" href="{% url 'vehicles_page' %}">
+        <i class="fas fa-truck"></i> Vehicles
+    </a>
+    <a class="action-btn" href="{% url 'drivers_page' %}">
+        <i class="fas fa-user-friends"></i> Drivers
+    </a>
+    <a class="action-btn" href="{% url 'trips_page' %}">
+        <i class="fas fa-route"></i> Trips
+    </a>
+    <a class="action-btn secondary" href="{% url 'manager_completed_trips' %}">
+        <i class="fas fa-file-alt"></i> Reports
+    </a>
 </div>
 
-<div class="alerts">
-    <h3 style="margin:0 0 10px;">Current Alerts</h3>
-    <ul>
-        {% if vehicles_in_maintenance > 0 %}
-        <li>{{ vehicles_in_maintenance }} vehicle(s) require maintenance attention.</li>
-        {% endif %}
-        {% if fuel_alerts > 0 %}
-        <li>{{ fuel_alerts }} fuel anomaly alert(s) detected.</li>
-        {% endif %}
-        {% if vehicles_in_maintenance == 0 and fuel_alerts == 0 %}
-        <li>No active alerts right now.</li>
-        {% endif %}
-    </ul>
+<div class="alerts-section">
+    <h3 class="section-title">
+        <i class="fas fa-bell"></i>
+        Operational Alerts
+    </h3>
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Current Count</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Vehicles Requiring Maintenance</td>
+                <td>{{ vehicles_in_maintenance }}</td>
+                <td>{% if vehicles_in_maintenance > 0 %}Attention Needed{% else %}Normal{% endif %}</td>
+            </tr>
+            <tr>
+                <td>Fuel Anomaly Alerts</td>
+                <td>{{ fuel_alerts }}</td>
+                <td>{% if fuel_alerts > 0 %}Investigate{% else %}Normal{% endif %}</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 {% endblock %}

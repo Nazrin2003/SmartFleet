@@ -31,9 +31,9 @@
 </div>
 
 <div class="actions">
-    <a class="btn" href="{% url 'assign_vehicle' driver.id %}">Assign Vehicle</a>
+    <a class="btn success" href="{% url 'assign_vehicle' driver.id %}">Assign Vehicle</a>
     {% if driver.assigned_vehicle %}
-    <a class="btn secondary" href="{% url 'unassign_vehicle' driver.id %}" onclick="return confirm('Unassign this vehicle from driver?')">Unassign Vehicle</a>
+    <a class="btn warning" href="{% url 'unassign_vehicle' driver.id %}" onclick="return confirm('Unassign this vehicle from driver?')">Unassign Vehicle</a>
     {% endif %}
 </div>
 

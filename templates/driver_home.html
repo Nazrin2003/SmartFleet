@@ -375,19 +375,7 @@
             <p>Manage your trips, track your performance, and stay updated with real-time notifications. Your vehicle and route information is always at your fingertips.</p>
         </div>
     </section>
-
-    <!-- Profile Completion Alert -->
-    {% if not profile_complete %}
-    <div class="profile-alert">
-        <i class="fas fa-exclamation-circle"></i>
-        <div>
-            <strong>Profile Incomplete!</strong> Complete your driver profile (license, phone, experience, emergency contact) before the manager can assign a vehicle.
-            <a href="{% url 'driver_profile' %}">Update Profile →</a>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Stats Cards -->
+<!-- Stats Cards -->
     <div class="stats-grid">
         <div class="stat-card">
             <h3>Assigned Vehicle</h3>
@@ -414,12 +402,7 @@
             <h3>Notifications</h3>
             <p>{{ notifications_count }}</p>
         </div>
-
-        <div class="stat-card {% if profile_complete %}complete{% else %}incomplete{% endif %}">
-            <h3>Profile Status</h3>
-            <p>{% if profile_complete %}Complete{% else %}Incomplete{% endif %}</p>
-        </div>
-    </div>
+</div>
 
     <!-- Quick Actions -->
     <div class="actions-grid">
@@ -435,11 +418,7 @@
             <i class="fas fa-car"></i>
             Vehicle Details
         </a>
-        <a class="action-btn secondary" href="{% url 'driver_profile' %}">
-            <i class="fas fa-user-cog"></i>
-            My Profile
-        </a>
-    </div>
+</div>
 
     <!-- Recent Notifications -->
     <div class="notifications-section">
@@ -487,3 +466,4 @@
         </table>
     </div>
 {% endblock %}
+

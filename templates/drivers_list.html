@@ -6,23 +6,32 @@
     .hero-drivers { background-image: url('{% static "images/fleet4.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
     .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; }
     .badge { padding:3px 8px; border-radius:999px; font-size:.74rem; font-weight:700; }
-    .badge-complete { background:#dcfce7; color:#166534; }
-    .badge-incomplete { background:#fff7ed; color:#9a3412; }
-    .table-link { color:#6f42c1; font-weight:700; text-decoration:none; }
+    .badge-assigned { background:#dcfce7; color:#166534; }
+    .badge-unassigned { background:#fee2e2; color:#991b1b; }
+    .action-btn {
+        display:inline-block;
+        padding:5px 9px;
+        border-radius:8px;
+        color:#fff;
+        text-decoration:none;
+        font-size:.78rem;
+        font-weight:700;
+        background:linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%);
+    }
 </style>
 {% endblock %}
 {% block content %}
 <section class="hero hero-drivers">
     <div>
         <h2>Driver Management</h2>
-        <p>Review profiles and assignment readiness before dispatch.</p>
+        <p>Review driver details and current vehicle assignment status.</p>
     </div>
 </section>
 <div class="panel">
 <table>
     <thead>
     <tr>
-        <th>Driver</th><th>License</th><th>Phone</th><th>Assigned Vehicle</th><th>Profile</th><th>Status</th><th>Actions</th>
+        <th>Driver</th><th>License</th><th>Phone</th><th>Assigned Vehicle</th><th>Assignment Status</th><th>Status</th><th>Actions</th>
     </tr>
     </thead>
     <tbody>
@@ -32,9 +41,9 @@
         <td>{{ driver.license_number|default:'-' }}</td>
         <td>{{ driver.phone_number|default:'-' }}</td>
         <td>{% if driver.assigned_vehicle %}{{ driver.assigned_vehicle.plate_number }}{% else %}-{% endif %}</td>
-        <td>{% if driver.profile_complete %}<span class="badge badge-complete">Complete</span>{% else %}<span class="badge badge-incomplete">Incomplete</span>{% endif %}</td>
+        <td>{% if driver.assigned_vehicle %}<span class="badge badge-assigned">Assigned</span>{% else %}<span class="badge badge-unassigned">Not Assigned</span>{% endif %}</td>
         <td>{{ driver.get_status_display }}</td>
-        <td><a class="table-link" href="{% url 'driver_detail' driver.id %}">View</a></td>
+        <td><a class="action-btn" href="{% url 'driver_detail' driver.id %}">View</a></td>
     </tr>
     {% empty %}
     <tr><td colspan="7">No drivers found.</td></tr>

@@ -28,7 +28,6 @@ class Vehicle(models.Model):
     ]
 
     plate_number = models.CharField(max_length=30, unique=True)
-    make_and_model = models.CharField(max_length=120, blank=True, null=True)
     year_of_manufacture = models.PositiveIntegerField(blank=True, null=True)
     model_name = models.CharField(max_length=100)
     vehicle_type = models.CharField(max_length=80, blank=True, null=True)

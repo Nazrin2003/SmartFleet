@@ -33,12 +33,12 @@
 <form method="post" style="display:inline-block;">
     {% csrf_token %}
     <input type="hidden" name="action" value="accept">
-    <button class="btn" type="submit">Accept</button>
+    <button class="btn success" type="submit">Accept</button>
 </form>
 <form method="post" style="display:inline-block;">
     {% csrf_token %}
     <input type="hidden" name="action" value="reject">
-    <button class="btn secondary" type="submit">Reject</button>
+    <button class="btn danger" type="submit">Reject</button>
 </form>
 </div>
 {% elif trip.status == 'in_progress' %}
@@ -46,7 +46,7 @@
 <form method="post">
     {% csrf_token %}
     <input type="hidden" name="action" value="complete">
-    <button class="btn" type="submit">Complete</button>
+    <button class="btn info" type="submit">Complete</button>
 </form>
 </div>
 {% elif trip.status == 'completed' %}

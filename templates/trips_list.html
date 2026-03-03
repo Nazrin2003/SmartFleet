@@ -19,9 +19,40 @@
         <p>Create and monitor dispatch progress across all active routes.</p>
     </div>
 </section>
+<form class="filters" method="get">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap:8px; align-items:end;">
+        <p><label>Trip ID</label><br><input type="text" name="trip_id" value="{{ request.GET.trip_id }}"></p>
+        <p><label>Driver</label><br><select name="driver">
+            <option value="">All Drivers</option>
+            {% for d in drivers %}
+            <option value="{{ d.id }}" {% if request.GET.driver == d.id|stringformat:"s" %}selected{% endif %}>{{ d.user.username }}</option>
+            {% endfor %}
+        </select></p>
+        <p><label>Vehicle</label><br><select name="vehicle">
+            <option value="">All Vehicles</option>
+            {% for v in vehicles %}
+            <option value="{{ v.id }}" {% if request.GET.vehicle == v.id|stringformat:"s" %}selected{% endif %}>{{ v.plate_number }}</option>
+            {% endfor %}
+        </select></p>
+        <p><label>Status</label><br><select name="status">
+            <option value="">All Status</option>
+            <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>Pending</option>
+            <option value="in_progress" {% if request.GET.status == "in_progress" %}selected{% endif %}>In Progress</option>
+            <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
+            <option value="rejected" {% if request.GET.status == "rejected" %}selected{% endif %}>Rejected</option>
+        </select></p>
+        <p><label>Date From</label><br><input type="date" name="date_from" value="{{ request.GET.date_from }}"></p>
+        <p><label>Date To</label><br><input type="date" name="date_to" value="{{ request.GET.date_to }}"></p>
+        <p><label>Sort</label><br><select name="sort">
+            <option value="date_desc" {% if request.GET.sort != 'date_asc' %}selected{% endif %}>Newest First</option>
+            <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>Oldest First</option>
+        </select></p>
+        <p><button class="btn" type="submit">Apply</button></p>
+    </div>
+</form>
 <div class="actions">
-    <a class="btn" href="{% url 'create_trip' %}">Create Trip</a>
-    <a class="btn secondary" href="{% url 'manager_completed_trips' %}">Completed Trips Report</a>
+    <a class="btn success" href="{% url 'create_trip' %}">Create Trip</a>
+    <a class="btn info" href="{% url 'manager_completed_trips' %}">Completed Trips Report</a>
 </div>
 <div class="panel">
 <table>

@@ -1,0 +1,23 @@
+{% extends "base_admin.html" %}
+{% block title %}{% if mode == 'edit' %}Edit Driver{% else %}Add Driver{% endif %}{% endblock %}
+{% block content %}
+<h2 style="margin-bottom:10px;">{% if mode == 'edit' %}Edit Driver{% else %}Add Driver{% endif %}</h2>
+<form method="post" style="display:grid;gap:10px;max-width:460px;">
+    {% csrf_token %}
+    <div><label>Username</label><br><input type="text" name="username" required value="{{ driver_obj.user.username|default:'' }}"></div>
+    <div><label>First Name</label><br><input type="text" name="first_name" value="{{ driver_obj.user.first_name|default:'' }}"></div>
+    <div><label>Last Name</label><br><input type="text" name="last_name" value="{{ driver_obj.user.last_name|default:'' }}"></div>
+    <div><label>Password {% if mode == 'edit' %}(leave blank to keep){% endif %}</label><br><input type="password" name="password" {% if mode != 'edit' %}required{% endif %}></div>
+    <div><label>License Number</label><br><input type="text" name="license_number" value="{{ driver_obj.license_number|default:'' }}"></div>
+    <div><label>License Expiry Date</label><br><input type="date" name="license_expiry_date" value="{{ driver_obj.license_expiry_date|date:'Y-m-d' }}"></div>
+    <div><label>Phone Number</label><br><input type="text" name="phone_number" value="{{ driver_obj.phone_number|default:'' }}"></div>
+    <div><label>Address</label><br><input type="text" name="address" value="{{ driver_obj.address|default:'' }}"></div>
+    <div><label>Years of Experience</label><br><input type="number" name="years_of_experience" value="{{ driver_obj.years_of_experience|default:'' }}"></div>
+    <div><label>Emergency Contact Name</label><br><input type="text" name="emergency_contact_name" value="{{ driver_obj.emergency_contact_name|default:'' }}"></div>
+    <div><label>Emergency Contact Phone</label><br><input type="text" name="emergency_contact_phone" value="{{ driver_obj.emergency_contact_phone|default:'' }}"></div>
+    <div>
+        <button class="btn success" type="submit">Save</button>
+        <a class="btn secondary" href="{% url 'driver_list_adm' %}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

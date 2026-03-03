@@ -22,7 +22,6 @@
     {% csrf_token %}
     <div class="form-grid">
     <p><label>Plate Number</label><br><input type="text" name="plate_number" required value="{{ vehicle.plate_number|default:'' }}"></p>
-    <p><label>Make and Model</label><br><input type="text" name="make_and_model" value="{{ vehicle.make_and_model|default:'' }}"></p>
     <p><label>Model</label><br><input type="text" name="model_name" required value="{{ vehicle.model_name|default:'' }}"></p>
     <p><label>Year of Manufacture</label><br><input type="number" name="year_of_manufacture" value="{{ vehicle.year_of_manufacture|default:'' }}"></p>
     <p><label>Type</label><br><input type="text" name="vehicle_type" value="{{ vehicle.vehicle_type|default:'' }}"></p>
@@ -43,7 +42,7 @@
     <p class="hint">
         Trip and maintenance metrics (engine temp, tire pressure, fuel consumption, weather, anomalies, predictive score, etc.) are captured during trip completion and maintenance workflows.
     </p>
-    <button class="btn" type="submit">Save</button>
+    <button class="btn success" type="submit">Save</button>
     <a class="btn secondary" href="{% url 'vehicles_page' %}">Cancel</a>
 </form>
 </div>
