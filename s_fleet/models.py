@@ -116,6 +116,13 @@ class Trip(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
+    start_lat = models.FloatField(blank=True, null=True)
+    start_lng = models.FloatField(blank=True, null=True)
+    start_address = models.CharField(max_length=255, blank=True, null=True)
+    end_lat = models.FloatField(blank=True, null=True)
+    end_lng = models.FloatField(blank=True, null=True)
+    end_address = models.CharField(max_length=255, blank=True, null=True)
+    actual_distance_km = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return f"Trip #{self.id} - {self.origin} to {self.destination}"

@@ -32,7 +32,7 @@
 
 <div class="panel">
 <table>
-    <thead><tr><th>Trip ID</th><th>Status</th><th>Origin</th><th>Destination</th><th>Date</th><th>Action</th></tr></thead>
+    <thead><tr><th>Trip ID</th><th>Status</th><th>Origin</th><th>Destination</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Date</th><th>Action</th></tr></thead>
     <tbody>
     {% for trip in trips %}
     <tr>
@@ -50,11 +50,14 @@
         </td>
         <td>{{ trip.origin }}</td>
         <td>{{ trip.destination }}</td>
+        <td>{% if trip.start_address %}{{ trip.start_address }}{% elif trip.start_lat and trip.start_lng %}{{ trip.start_lat }}, {{ trip.start_lng }}{% else %}-{% endif %}</td>
+        <td>{% if trip.end_address %}{{ trip.end_address }}{% elif trip.end_lat and trip.end_lng %}{{ trip.end_lat }}, {{ trip.end_lng }}{% else %}-{% endif %}</td>
+        <td>{{ trip.actual_distance_km|default:"-" }}</td>
         <td>{{ trip.created_at }}</td>
         <td><a class="action-btn" href="{% url 'trip_detail' trip.id %}">View</a></td>
     </tr>
     {% empty %}
-    <tr><td colspan="6">No trips assigned.</td></tr>
+    <tr><td colspan="9">No trips assigned.</td></tr>
     {% endfor %}
     </tbody>
 </table>

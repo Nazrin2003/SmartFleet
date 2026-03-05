@@ -27,6 +27,18 @@
         <p>Review driver details and current vehicle assignment status.</p>
     </div>
 </section>
+<div class="filters">
+    <form method="get" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+        <p style="margin:0;">
+            <label>Search</label><br>
+            <input type="text" name="q" value="{{ q|default:'' }}" placeholder="Username / License / Phone / Vehicle">
+        </p>
+        <p style="margin:0;">
+            <button class="btn info" type="submit">Search</button>
+            <a class="btn secondary" href="{% url 'drivers_page' %}">Clear</a>
+        </p>
+    </form>
+</div>
 <div class="panel">
 <table>
     <thead>

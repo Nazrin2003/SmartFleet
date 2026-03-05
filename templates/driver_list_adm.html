@@ -22,6 +22,13 @@
     <h2>Drivers</h2>
     <a class="btn success" href="{% url 'add_driver_adm' %}">Add Driver</a>
 </div>
+<form class="filters" method="get" style="margin-bottom:10px;">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search username, name, license, or phone">
+    <button class="btn" type="submit">Search</button>
+    {% if q %}
+    <a class="btn secondary" href="{% url 'driver_list_adm' %}">Clear</a>
+    {% endif %}
+</form>
 <table>
     <thead><tr><th>Username</th><th>License</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>

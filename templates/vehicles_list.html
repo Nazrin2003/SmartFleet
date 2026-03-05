@@ -35,6 +35,18 @@
 <div class="actions">
     <a class="btn success" href="{% url 'vehicle_create' %}">Add Vehicle</a>
 </div>
+<div class="filters">
+    <form method="get" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+        <p style="margin:0;">
+            <label>Search</label><br>
+            <input type="text" name="q" value="{{ q|default:'' }}" placeholder="Plate / Model / Type / Driver">
+        </p>
+        <p style="margin:0;">
+            <button class="btn info" type="submit">Search</button>
+            <a class="btn secondary" href="{% url 'vehicles_page' %}">Clear</a>
+        </p>
+    </form>
+</div>
 <div class="panel">
 <table>
     <thead>

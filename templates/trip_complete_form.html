@@ -13,24 +13,78 @@
 <section class="hero hero-complete">
     <div>
         <h2>Complete Trip #{{ trip.id }}</h2>
-        <p>Submit actual trip metrics for reports and maintenance analysis.</p>
+        <p>Submit only predictive-maintenance inputs for this completed trip.</p>
     </div>
 </section>
 <div class="form-panel">
-<form method="post">
+<form method="post" id="complete-trip-form">
     {% csrf_token %}
+    <input type="hidden" name="end_lat" id="end-lat">
+    <input type="hidden" name="end_lng" id="end-lng">
     <div class="form-grid">
-    <p><label>Actual Delivery Time (hours)</label><br><input type="number" step="0.01" name="actual_delivery_time" required></p>
-    <p><label>Fuel Filled (liters)</label><br><input type="number" step="0.01" name="fuel_filled_liters" required></p>
-    <p><label>Fuel Cost</label><br><input type="number" step="0.01" name="fuel_cost" required></p>
-    <p><label>Odometer</label><br><input type="number" name="odometer_reading" required></p>
-    <p><label>Engine Temp</label><br><input type="number" step="0.01" name="engine_temp" required></p>
-    <p><label>Oil Quality</label><br><input type="number" step="0.01" name="oil_quality" required></p>
-    <p><label>Brake Condition</label><br><input type="number" step="0.01" name="brake_condition" required></p>
-    <p><label>Weather</label><br><input type="text" name="weather" required></p>
-    <p><label>Road Condition</label><br><input type="text" name="road_condition" required></p>
+    <p><label>Engine_Temperature</label><br><input type="number" step="0.01" name="engine_temp" placeholder="e.g., 120" required></p>
+    <p><label>Oil_Quality</label><br><input type="number" step="0.01" name="oil_quality" placeholder="e.g., 80.39" required></p>
+    <p>
+        <label>Brake_Condition</label><br>
+        <select name="brake_condition" required>
+            <option value="">Select</option>
+            <option value="Good">Good</option>
+            <option value="Moderate">Moderate</option>
+            <option value="Poor">Poor</option>
+        </select>
+    </p>
+    <p>
+        <label>Weather_Conditions</label><br>
+        <select name="weather">
+            <option value="">Select (optional)</option>
+            <option value="Clear">Clear</option>
+            <option value="Rainy">Rainy</option>
+            <option value="Cloudy">Cloudy</option>
+            <option value="Foggy">Foggy</option>
+            <option value="Stormy">Stormy</option>
+        </select>
+    </p>
+    <p>
+        <label>Road_Conditions</label><br>
+        <select name="road_condition">
+            <option value="">Select (optional)</option>
+            <option value="Highway">Highway</option>
+            <option value="Urban">Urban</option>
+            <option value="Rural">Rural</option>
+            <option value="Mixed">Mixed</option>
+        </select>
+    </p>
     </div>
     <button class="btn success" type="submit">Submit</button>
 </form>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const completeForm = document.getElementById("complete-trip-form");
+    if (!completeForm) return;
+
+    completeForm.addEventListener("submit", function (event) {
+        const latInput = document.getElementById("end-lat");
+        const lngInput = document.getElementById("end-lng");
+        if (latInput.value && lngInput.value) return;
+
+        event.preventDefault();
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported in this browser.");
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                latInput.value = position.coords.latitude;
+                lngInput.value = position.coords.longitude;
+                completeForm.submit();
+            },
+            function () {
+                alert("Unable to capture location. Please allow location access and submit again.");
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    });
+});
+</script>
 {% endblock %}

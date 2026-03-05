@@ -4,9 +4,14 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 import csv
+import json
+import math
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 from .models import Alert, Driver, FuelLog, Registration, Trip, TripCompletion, Vehicle
 from .decorators import role_required 
 
@@ -27,6 +32,46 @@ def _to_int(value):
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _haversine_km(lat1, lng1, lat2, lng2):
+    earth_radius_km = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return round(earth_radius_km * c, 3)
+
+
+def _reverse_geocode(lat, lng):
+    try:
+        params = urlencode({"lat": lat, "lon": lng, "format": "jsonv2"})
+        url = f"https://nominatim.openstreetmap.org/reverse?{params}"
+        req = Request(url, headers={"User-Agent": "smrt_fleet/1.0"})
+        with urlopen(req, timeout=4) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+            return payload.get("display_name")
+    except Exception:
+        return None
+
+
+def _normalize_brake_condition(raw_value):
+    if raw_value in (None, ""):
+        return None
+    numeric = _to_float(raw_value)
+    if numeric is not None:
+        return numeric
+    mapped = {
+        "good": 80.0,
+        "moderate": 55.0,
+        "fair": 55.0,
+        "poor": 30.0,
+        "bad": 30.0,
+    }
+    return mapped.get(str(raw_value).strip().lower())
 
 
 def home(request):
@@ -97,8 +142,16 @@ def admin_home(request):
 def manager_list_adm(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
-    managers = Registration.objects.filter(user_role='manager').select_related('user').order_by('user__username')
-    return render(request, 'manager_list_adm.html', {'reg': reg, 'managers': managers})
+    managers = Registration.objects.filter(user_role='manager').select_related('user')
+    q = (request.GET.get('q') or '').strip()
+    if q:
+        managers = managers.filter(
+            Q(user__username__icontains=q) |
+            Q(user__first_name__icontains=q) |
+            Q(user__last_name__icontains=q)
+        )
+    managers = managers.order_by('user__username')
+    return render(request, 'manager_list_adm.html', {'reg': reg, 'managers': managers, 'q': q})
 
 
 @login_required(login_url='login')
@@ -182,8 +235,18 @@ def delete_manager_adm(request, reg_id):
 def driver_list_adm(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
-    drivers = Driver.objects.select_related('user', 'assigned_vehicle').order_by('user__username')
-    return render(request, 'driver_list_adm.html', {'reg': reg, 'drivers': drivers})
+    drivers = Driver.objects.select_related('user', 'assigned_vehicle')
+    q = (request.GET.get('q') or '').strip()
+    if q:
+        drivers = drivers.filter(
+            Q(user__username__icontains=q) |
+            Q(user__first_name__icontains=q) |
+            Q(user__last_name__icontains=q) |
+            Q(license_number__icontains=q) |
+            Q(phone_number__icontains=q)
+        )
+    drivers = drivers.order_by('user__username')
+    return render(request, 'driver_list_adm.html', {'reg': reg, 'drivers': drivers, 'q': q})
 
 
 @login_required(login_url='login')
@@ -414,8 +477,16 @@ def manager_home(request):
 def vehicles_page(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
+    q = (request.GET.get("q") or "").strip()
     vehicles = Vehicle.objects.select_related("assigned_driver", "assigned_driver__user").order_by("plate_number")
-    return render(request, 'vehicles_list.html', {'reg': reg, 'vehicles': vehicles})
+    if q:
+        vehicles = vehicles.filter(
+            Q(plate_number__icontains=q)
+            | Q(model_name__icontains=q)
+            | Q(vehicle_type__icontains=q)
+            | Q(assigned_driver__user__username__icontains=q)
+        )
+    return render(request, 'vehicles_list.html', {'reg': reg, 'vehicles': vehicles, 'q': q})
 
 
 @login_required(login_url='login')
@@ -423,11 +494,19 @@ def vehicles_page(request):
 def drivers_page(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
+    q = (request.GET.get("q") or "").strip()
     driver_users = User.objects.filter(registration__user_role='driver').order_by("username")
     for user in driver_users:
         Driver.objects.get_or_create(user=user)
     drivers = Driver.objects.select_related("user", "assigned_vehicle").order_by("user__username")
-    return render(request, 'drivers_list.html', {'reg': reg, 'drivers': drivers})
+    if q:
+        drivers = drivers.filter(
+            Q(user__username__icontains=q)
+            | Q(license_number__icontains=q)
+            | Q(phone_number__icontains=q)
+            | Q(assigned_vehicle__plate_number__icontains=q)
+        )
+    return render(request, 'drivers_list.html', {'reg': reg, 'drivers': drivers, 'q': q})
 
 
 @login_required(login_url='login')
@@ -870,12 +949,21 @@ def trip_detail(request, trip_id):
     if request.method == "POST":
         action = (request.POST.get("action") or "").strip()
         if action == "accept" and trip.status == Trip.STATUS_PENDING:
+            start_lat = _to_float(request.POST.get("start_lat"))
+            start_lng = _to_float(request.POST.get("start_lng"))
+            if start_lat is None or start_lng is None:
+                messages.error(request, "Unable to capture GPS location. Allow location access and try again.")
+                return redirect("trip_detail", trip_id=trip.id)
             if trip.vehicle.status in [Vehicle.STATUS_MAINTENANCE, Vehicle.STATUS_MAINT_REQUIRED]:
                 messages.error(request, "Vehicle is under maintenance and cannot start trip.")
             else:
+                start_address = _reverse_geocode(start_lat, start_lng)
                 trip.status = Trip.STATUS_IN_PROGRESS
                 trip.started_at = timezone.now()
-                trip.save(update_fields=["status", "started_at"])
+                trip.start_lat = start_lat
+                trip.start_lng = start_lng
+                trip.start_address = start_address
+                trip.save(update_fields=["status", "started_at", "start_lat", "start_lng", "start_address"])
                 driver.status = Driver.STATUS_IN_TRIP
                 driver.save(update_fields=["status"])
                 trip.vehicle.status = Vehicle.STATUS_IN_TRIP
@@ -909,56 +997,47 @@ def trip_complete_form(request, trip_id):
         return redirect("driver_trips")
 
     if request.method == "POST":
-        actual_delivery_time = _to_float(request.POST.get("actual_delivery_time"))
-        fuel_filled = _to_float(request.POST.get("fuel_filled_liters"))
-        fuel_cost = _to_float(request.POST.get("fuel_cost"))
-        odometer_reading = _to_float(request.POST.get("odometer_reading"))
         engine_temp = _to_float(request.POST.get("engine_temp"))
         oil_quality = _to_float(request.POST.get("oil_quality"))
-        brake_condition = _to_float(request.POST.get("brake_condition"))
-        weather = (request.POST.get("weather") or "").strip()
-        road_condition = (request.POST.get("road_condition") or "").strip()
+        brake_condition = _normalize_brake_condition(request.POST.get("brake_condition"))
+        weather = (request.POST.get("weather") or "").strip() or None
+        road_condition = (request.POST.get("road_condition") or "").strip() or None
+        end_lat = _to_float(request.POST.get("end_lat"))
+        end_lng = _to_float(request.POST.get("end_lng"))
 
-        if actual_delivery_time is None or fuel_filled is None:
-            messages.error(request, "Actual delivery time and fuel filled are required.")
+        if engine_temp is None or oil_quality is None or brake_condition is None:
+            messages.error(request, "Engine temperature, oil quality, and brake condition are required.")
+            return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
+        if end_lat is None or end_lng is None:
+            messages.error(request, "Unable to capture end GPS location. Allow location access and submit again.")
             return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
 
         completion, _ = TripCompletion.objects.get_or_create(trip=trip)
-        completion.actual_delivery_time = actual_delivery_time
-        completion.fuel_filled = fuel_filled
-        completion.fuel_cost = fuel_cost
-        completion.odometer_reading = odometer_reading
         completion.engine_temp = engine_temp
         completion.oil_quality = oil_quality
         completion.brake_condition = brake_condition
-        completion.weather = weather or None
-        completion.road_condition = road_condition or None
+        completion.weather = weather
+        completion.road_condition = road_condition
         completion.save()
-
-        FuelLog.objects.create(
-            vehicle=trip.vehicle,
-            driver=driver,
-            trip=trip,
-            liters=fuel_filled,
-            cost=fuel_cost,
-            fuel_consumption=fuel_filled,
-            is_anomaly=False,
-        )
-
-        trip.fuel_used_liters = fuel_filled
-        trip.delivery_times = actual_delivery_time
-        trip.weather_conditions = weather or None
-        trip.road_conditions = road_condition or None
         trip.status = Trip.STATUS_COMPLETED
         trip.completed_at = timezone.now()
+        trip.weather_conditions = weather
+        trip.road_conditions = road_condition
+        trip.end_lat = end_lat
+        trip.end_lng = end_lng
+        trip.end_address = _reverse_geocode(end_lat, end_lng)
+        if trip.start_lat is not None and trip.start_lng is not None:
+            trip.actual_distance_km = _haversine_km(trip.start_lat, trip.start_lng, end_lat, end_lng)
         trip.save(
             update_fields=[
-                "fuel_used_liters",
-                "delivery_times",
-                "weather_conditions",
-                "road_conditions",
                 "status",
                 "completed_at",
+                "weather_conditions",
+                "road_conditions",
+                "end_lat",
+                "end_lng",
+                "end_address",
+                "actual_distance_km",
             ]
         )
 

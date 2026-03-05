@@ -31,42 +31,23 @@
 </div>
 
 <div class="panel">
-<h3>Maintenance History</h3>
-<table>
-    <thead><tr><th>Date</th><th>Notes</th><th>Risk</th><th>Status</th></tr></thead>
-    <tbody>
-    {% for item in maintenance_history %}
-        <tr><td>{{ item.created_at }}</td><td>{{ item.notes }}</td><td>{{ item.risk_score }}</td><td>{% if item.is_resolved %}Resolved{% else %}Open{% endif %}</td></tr>
-    {% empty %}
-        <tr><td colspan="4">No maintenance history.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
-</div>
-
-<div class="panel">
 <h3>Trip History</h3>
 <table>
-    <thead><tr><th>Trip ID</th><th>Driver</th><th>Route</th><th>Status</th><th>Date</th></tr></thead>
+    <thead><tr><th>Trip ID</th><th>Driver</th><th>Route</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Status</th><th>Date</th></tr></thead>
     <tbody>
     {% for trip in trip_history %}
-        <tr><td>{{ trip.id }}</td><td>{{ trip.driver.user.username }}</td><td>{{ trip.origin }} - {{ trip.destination }}</td><td>{{ trip.get_status_display }}</td><td>{{ trip.created_at }}</td></tr>
+        <tr>
+            <td>{{ trip.id }}</td>
+            <td>{{ trip.driver.user.username }}</td>
+            <td>{{ trip.origin }} - {{ trip.destination }}</td>
+            <td>{% if trip.start_address %}{{ trip.start_address }}{% elif trip.start_lat and trip.start_lng %}{{ trip.start_lat }}, {{ trip.start_lng }}{% else %}-{% endif %}</td>
+            <td>{% if trip.end_address %}{{ trip.end_address }}{% elif trip.end_lat and trip.end_lng %}{{ trip.end_lat }}, {{ trip.end_lng }}{% else %}-{% endif %}</td>
+            <td>{{ trip.actual_distance_km|default:"-" }}</td>
+            <td>{{ trip.get_status_display }}</td>
+            <td>{{ trip.created_at }}</td>
+        </tr>
     {% empty %}
-        <tr><td colspan="5">No trips.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
-</div>
-
-<div class="panel">
-<h3>Fuel Logs</h3>
-<table>
-    <thead><tr><th>Date</th><th>Driver</th><th>Liters</th><th>Cost</th></tr></thead>
-    <tbody>
-    {% for log in fuel_logs %}
-        <tr><td>{{ log.logged_at }}</td><td>{% if log.driver %}{{ log.driver.user.username }}{% else %}-{% endif %}</td><td>{{ log.liters }}</td><td>{{ log.cost }}</td></tr>
-    {% empty %}
-        <tr><td colspan="4">No fuel logs.</td></tr>
+        <tr><td colspan="8">No trips.</td></tr>
     {% endfor %}
     </tbody>
 </table>
