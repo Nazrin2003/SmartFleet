@@ -34,6 +34,14 @@
             <input type="text" name="q" value="{{ q|default:'' }}" placeholder="Username / License / Phone / Vehicle">
         </p>
         <p style="margin:0;">
+            <label>Assignment Status</label><br>
+            <select name="assignment_status">
+                <option value="">All</option>
+                <option value="assigned" {% if assignment_status == "assigned" %}selected{% endif %}>Assigned</option>
+                <option value="not_assigned" {% if assignment_status == "not_assigned" %}selected{% endif %}>Not Assigned</option>
+            </select>
+        </p>
+        <p style="margin:0;">
             <button class="btn info" type="submit">Search</button>
             <a class="btn secondary" href="{% url 'drivers_page' %}">Clear</a>
         </p>

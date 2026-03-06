@@ -84,17 +84,18 @@ def signup(request):
 
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        username = (request.POST.get('username') or '').strip()
         password = request.POST.get('password')
+
+        existing_user = User.objects.filter(username=username).first()
+        if existing_user and not existing_user.is_active:
+            messages.error(request, 'Your account has been blocked by the administrator. Please contact admin.')
+            return redirect('login')
 
         user = authenticate(request, username=username, password=password)
 
         if user is None:
             messages.error(request, 'Invalid username or password')
-            return redirect('login')
-
-        if not user.is_active:
-            messages.error(request, 'Your account is blocked. Contact admin.')
             return redirect('login')
 
         login(request, user)
@@ -478,6 +479,7 @@ def vehicles_page(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
     q = (request.GET.get("q") or "").strip()
+    status = (request.GET.get("status") or "").strip()
     vehicles = Vehicle.objects.select_related("assigned_driver", "assigned_driver__user").order_by("plate_number")
     if q:
         vehicles = vehicles.filter(
@@ -486,7 +488,9 @@ def vehicles_page(request):
             | Q(vehicle_type__icontains=q)
             | Q(assigned_driver__user__username__icontains=q)
         )
-    return render(request, 'vehicles_list.html', {'reg': reg, 'vehicles': vehicles, 'q': q})
+    if status in dict(Vehicle.STATUS_CHOICES):
+        vehicles = vehicles.filter(status=status)
+    return render(request, 'vehicles_list.html', {'reg': reg, 'vehicles': vehicles, 'q': q, 'status': status})
 
 
 @login_required(login_url='login')
@@ -495,6 +499,7 @@ def drivers_page(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
     q = (request.GET.get("q") or "").strip()
+    assignment_status = (request.GET.get("assignment_status") or "").strip()
     driver_users = User.objects.filter(registration__user_role='driver').order_by("username")
     for user in driver_users:
         Driver.objects.get_or_create(user=user)
@@ -506,7 +511,15 @@ def drivers_page(request):
             | Q(phone_number__icontains=q)
             | Q(assigned_vehicle__plate_number__icontains=q)
         )
-    return render(request, 'drivers_list.html', {'reg': reg, 'drivers': drivers, 'q': q})
+    if assignment_status == "assigned":
+        drivers = drivers.filter(assigned_vehicle__isnull=False)
+    elif assignment_status == "not_assigned":
+        drivers = drivers.filter(assigned_vehicle__isnull=True)
+    return render(
+        request,
+        'drivers_list.html',
+        {'reg': reg, 'drivers': drivers, 'q': q, 'assignment_status': assignment_status},
+    )
 
 
 @login_required(login_url='login')
