@@ -460,7 +460,7 @@ def manager_home(request):
     vehicles_in_maintenance = Vehicle.objects.filter(
         status__in=[Vehicle.STATUS_MAINTENANCE, Vehicle.STATUS_MAINT_REQUIRED]
     ).count()
-    fuel_alerts = FuelLog.objects.filter(is_anomaly=True).count()
+    fuel_alerts = Alert.objects.filter(alert_type=Alert.TYPE_FUEL, is_resolved=False).count()
 
     dashboard_data = {
         'total_vehicles': total_vehicles,
@@ -471,6 +471,58 @@ def manager_home(request):
         'fuel_alerts': fuel_alerts,
     }
     return render(request, 'manager_home.html', {'reg': reg, **dashboard_data})
+
+
+@login_required(login_url='login')
+@role_required('manager')
+def manager_fuel_alerts(request):
+    reg_id = request.session.get('reg_id')
+    reg = Registration.objects.filter(id=reg_id).first()
+
+    alerts = Alert.objects.filter(alert_type=Alert.TYPE_FUEL).select_related(
+        "vehicle", "driver", "driver__user", "trip"
+    )
+
+    severity = (request.GET.get("severity") or "").strip()
+    status = (request.GET.get("status") or "open").strip()
+    trip_id = (request.GET.get("trip_id") or "").strip()
+    date_from = (request.GET.get("date_from") or "").strip()
+    date_to = (request.GET.get("date_to") or "").strip()
+
+    if severity in {Alert.SEVERITY_LOW, Alert.SEVERITY_MEDIUM, Alert.SEVERITY_HIGH}:
+        alerts = alerts.filter(severity=severity)
+    if status == "open":
+        alerts = alerts.filter(is_resolved=False)
+    elif status == "resolved":
+        alerts = alerts.filter(is_resolved=True)
+    if trip_id.isdigit():
+        alerts = alerts.filter(trip_id=int(trip_id))
+    if date_from:
+        alerts = alerts.filter(created_at__date__gte=date_from)
+    if date_to:
+        alerts = alerts.filter(created_at__date__lte=date_to)
+
+    alerts = alerts.order_by("-created_at")
+    return render(
+        request,
+        "manager_fuel_alerts.html",
+        {"reg": reg, "alerts": alerts},
+    )
+
+
+@login_required(login_url='login')
+@role_required('manager')
+def resolve_fuel_alert(request, alert_id):
+    alert = Alert.objects.filter(id=alert_id, alert_type=Alert.TYPE_FUEL).first()
+    if not alert:
+        messages.error(request, "Fuel alert not found.")
+        return redirect("manager_fuel_alerts")
+
+    alert.is_resolved = True
+    alert.resolved_at = timezone.now()
+    alert.save(update_fields=["is_resolved", "resolved_at"])
+    messages.success(request, "Fuel alert marked as resolved.")
+    return redirect("manager_fuel_alerts")
 
 
 @login_required(login_url='login')
@@ -1010,6 +1062,7 @@ def trip_complete_form(request, trip_id):
         return redirect("driver_trips")
 
     if request.method == "POST":
+        fuel_used_liters = _to_float(request.POST.get("fuel_used_liters"))
         engine_temp = _to_float(request.POST.get("engine_temp"))
         oil_quality = _to_float(request.POST.get("oil_quality"))
         brake_condition = _normalize_brake_condition(request.POST.get("brake_condition"))
@@ -1018,20 +1071,25 @@ def trip_complete_form(request, trip_id):
         end_lat = _to_float(request.POST.get("end_lat"))
         end_lng = _to_float(request.POST.get("end_lng"))
 
+        if fuel_used_liters is None:
+            messages.error(request, "Fuel used is required.")
+            return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
         if engine_temp is None or oil_quality is None or brake_condition is None:
-            messages.error(request, "Engine temperature, oil quality, and brake condition are required.")
+            messages.error(request, "Fuel used, engine temperature, oil quality, and brake condition are required.")
             return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
         if end_lat is None or end_lng is None:
             messages.error(request, "Unable to capture end GPS location. Allow location access and submit again.")
             return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
 
         completion, _ = TripCompletion.objects.get_or_create(trip=trip)
+        completion.fuel_filled = fuel_used_liters
         completion.engine_temp = engine_temp
         completion.oil_quality = oil_quality
         completion.brake_condition = brake_condition
         completion.weather = weather
         completion.road_condition = road_condition
         completion.save()
+        trip.fuel_used_liters = fuel_used_liters
         trip.status = Trip.STATUS_COMPLETED
         trip.completed_at = timezone.now()
         trip.weather_conditions = weather
@@ -1043,6 +1101,7 @@ def trip_complete_form(request, trip_id):
             trip.actual_distance_km = _haversine_km(trip.start_lat, trip.start_lng, end_lat, end_lng)
         trip.save(
             update_fields=[
+                "fuel_used_liters",
                 "status",
                 "completed_at",
                 "weather_conditions",
@@ -1052,6 +1111,29 @@ def trip_complete_form(request, trip_id):
                 "end_address",
                 "actual_distance_km",
             ]
+        )
+
+        fuel_alert_triggered = False
+        fuel_alert_severity = Alert.SEVERITY_MEDIUM
+        fuel_alert_message = None
+        expected_fuel = trip.expected_fuel_liters
+        if expected_fuel and expected_fuel > 0:
+            over_pct = ((fuel_used_liters - expected_fuel) / expected_fuel) * 100
+            if over_pct >= 20:
+                fuel_alert_triggered = True
+                fuel_alert_severity = Alert.SEVERITY_HIGH if over_pct >= 35 else Alert.SEVERITY_MEDIUM
+                fuel_alert_message = (
+                    f"Fuel overuse on trip #{trip.id}: expected {expected_fuel:.2f} L, "
+                    f"actual {fuel_used_liters:.2f} L ({over_pct:.1f}% higher)."
+                )
+
+        FuelLog.objects.create(
+            vehicle=trip.vehicle,
+            driver=driver,
+            trip=trip,
+            liters=fuel_used_liters,
+            fuel_consumption=fuel_used_liters,
+            is_anomaly=fuel_alert_triggered,
         )
 
         maintenance_required = False
@@ -1074,6 +1156,16 @@ def trip_complete_form(request, trip_id):
                 severity=Alert.SEVERITY_HIGH,
                 title="Predictive Maintenance Alert",
                 message=f"Vehicle {trip.vehicle.plate_number} flagged after trip #{trip.id}.",
+                vehicle=trip.vehicle,
+                driver=driver,
+                trip=trip,
+            )
+        if fuel_alert_triggered and fuel_alert_message:
+            Alert.objects.create(
+                alert_type=Alert.TYPE_FUEL,
+                severity=fuel_alert_severity,
+                title="Fuel Consumption Alert",
+                message=fuel_alert_message,
                 vehicle=trip.vehicle,
                 driver=driver,
                 trip=trip,

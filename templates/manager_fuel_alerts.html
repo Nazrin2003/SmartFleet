@@ -1,0 +1,85 @@
+{% extends "base_manager.html" %}
+{% load static %}
+{% block title %}Fuel Alerts{% endblock %}
+{% block extra_styles %}
+<style>
+    .hero-fuel { background-image: url('{% static "images/fleet2.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
+    .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; }
+    .badge { padding:3px 8px; border-radius:999px; font-size:.74rem; font-weight:700; }
+    .sev-low { background:#dcfce7; color:#166534; }
+    .sev-medium { background:#fef3c7; color:#92400e; }
+    .sev-high { background:#fee2e2; color:#991b1b; }
+    .status-open { background:#dbeafe; color:#1e40af; }
+    .status-resolved { background:#dcfce7; color:#166534; }
+</style>
+{% endblock %}
+{% block content %}
+<section class="hero hero-fuel">
+    <div>
+        <h2>Fuel Alerts</h2>
+        <p>Review abnormal fuel usage and resolve alerts after verification.</p>
+    </div>
+</section>
+
+<form class="filters" method="get">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap:8px; align-items:end;">
+        <p><label>Trip ID</label><br><input type="text" name="trip_id" value="{{ request.GET.trip_id }}"></p>
+        <p><label>Severity</label><br><select name="severity">
+            <option value="">All</option>
+            <option value="low" {% if request.GET.severity == "low" %}selected{% endif %}>Low</option>
+            <option value="medium" {% if request.GET.severity == "medium" %}selected{% endif %}>Medium</option>
+            <option value="high" {% if request.GET.severity == "high" %}selected{% endif %}>High</option>
+        </select></p>
+        <p><label>Status</label><br><select name="status">
+            <option value="open" {% if request.GET.status != "resolved" %}selected{% endif %}>Open</option>
+            <option value="resolved" {% if request.GET.status == "resolved" %}selected{% endif %}>Resolved</option>
+            <option value="all" {% if request.GET.status == "all" %}selected{% endif %}>All</option>
+        </select></p>
+        <p><label>Date From</label><br><input type="date" name="date_from" value="{{ request.GET.date_from }}"></p>
+        <p><label>Date To</label><br><input type="date" name="date_to" value="{{ request.GET.date_to }}"></p>
+        <p>
+            <button class="btn info" type="submit">Filter</button>
+            <a class="btn secondary" href="{% url 'manager_fuel_alerts' %}">Clear</a>
+        </p>
+    </div>
+</form>
+
+<div class="panel">
+<table>
+    <thead>
+        <tr>
+            <th>ID</th><th>Trip</th><th>Driver</th><th>Vehicle</th><th>Severity</th><th>Status</th><th>Message</th><th>Date</th><th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for alert in alerts %}
+    <tr>
+        <td>{{ alert.id }}</td>
+        <td>{% if alert.trip %}#{{ alert.trip.id }}{% else %}-{% endif %}</td>
+        <td>{% if alert.driver %}{{ alert.driver.user.username }}{% else %}-{% endif %}</td>
+        <td>{% if alert.vehicle %}{{ alert.vehicle.plate_number }}{% else %}-{% endif %}</td>
+        <td><span class="badge sev-{{ alert.severity }}">{{ alert.get_severity_display }}</span></td>
+        <td>
+            {% if alert.is_resolved %}
+                <span class="badge status-resolved">Resolved</span>
+            {% else %}
+                <span class="badge status-open">Open</span>
+            {% endif %}
+        </td>
+        <td>{{ alert.message }}</td>
+        <td>{{ alert.created_at }}</td>
+        <td>
+            {% if not alert.is_resolved %}
+                <a class="btn success" href="{% url 'resolve_fuel_alert' alert.id %}" onclick="return confirm('Mark this fuel alert as resolved?')">Resolve</a>
+            {% else %}
+                -
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="9">No fuel alerts found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
