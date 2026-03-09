@@ -27,7 +27,6 @@
         <div class="detail-item"><h4>Vehicle</h4><p>{{ trip.vehicle.plate_number }}</p></div>
         <div class="detail-item"><h4>Load</h4><p>{{ trip.load_details|default:"-" }}</p></div>
         <div class="detail-item"><h4>Distance</h4><p>{{ trip.estimated_distance_km|default:"-" }} km</p></div>
-        <div class="detail-item"><h4>Expected Fuel</h4><p>{{ trip.expected_fuel_liters|default:"-" }} L</p></div>
         <div class="detail-item"><h4>Start Address</h4><p>{{ trip.start_address|default:"-" }}</p></div>
         <div class="detail-item"><h4>End Address</h4><p>{{ trip.end_address|default:"-" }}</p></div>
         <div class="detail-item"><h4>Actual Distance</h4><p>{{ trip.actual_distance_km|default:"-" }} km</p></div>
@@ -61,10 +60,8 @@
 <div class="panel">
 <h3>Trip Summary</h3>
 <p><strong>Completed At:</strong> {{ trip.completed_at }}</p>
-<p><strong>Fuel Used:</strong> {{ trip.fuel_used_liters }}</p>
 {% if trip.completion %}
 <p><strong>Actual Delivery Time:</strong> {{ trip.completion.actual_delivery_time }}</p>
-<p><strong>Fuel Cost:</strong> {{ trip.completion.fuel_cost }}</p>
 <p><strong>Odometer:</strong> {{ trip.completion.odometer_reading }}</p>
 <p><strong>Engine Temp:</strong> {{ trip.completion.engine_temp }}</p>
 <p><strong>Oil Quality:</strong> {{ trip.completion.oil_quality }}</p>

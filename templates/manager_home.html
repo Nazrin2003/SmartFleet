@@ -242,10 +242,6 @@
         <h3>In Maintenance</h3>
         <p>{{ vehicles_in_maintenance }}</p>
     </div>
-    <div class="stat-card danger">
-        <h3>Fuel Alerts</h3>
-        <p>{{ fuel_alerts }}</p>
-    </div>
 </div>
 
 <div class="actions-grid">
@@ -257,9 +253,6 @@
     </a>
     <a class="action-btn" href="{% url 'trips_page' %}">
         <i class="fas fa-route"></i> Trips
-    </a>
-    <a class="action-btn" href="{% url 'manager_fuel_alerts' %}">
-        <i class="fas fa-gas-pump"></i> Fuel Alerts
     </a>
     <a class="action-btn secondary" href="{% url 'manager_completed_trips' %}">
         <i class="fas fa-file-alt"></i> Reports
@@ -284,11 +277,6 @@
                 <td>Vehicles Requiring Maintenance</td>
                 <td>{{ vehicles_in_maintenance }}</td>
                 <td>{% if vehicles_in_maintenance > 0 %}Attention Needed{% else %}Normal{% endif %}</td>
-            </tr>
-            <tr>
-                <td>Fuel Anomaly Alerts</td>
-                <td>{{ fuel_alerts }}</td>
-                <td>{% if fuel_alerts > 0 %}Investigate{% else %}Normal{% endif %}</td>
             </tr>
         </tbody>
     </table>

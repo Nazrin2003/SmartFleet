@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
@@ -12,7 +12,8 @@ import json
 import math
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
-from .models import Alert, Driver, FuelLog, Registration, Trip, TripCompletion, Vehicle
+from .models import Alert, Driver, MLFeatureRecord, PredictionResult, Registration, Trip, TripCompletion, Vehicle
+from .ml.predictive_maintenance import predict_maintenance_for_trip
 from .decorators import role_required 
 
 
@@ -72,6 +73,35 @@ def _normalize_brake_condition(raw_value):
         "bad": 30.0,
     }
     return mapped.get(str(raw_value).strip().lower())
+
+
+def _encode_maintenance_type(value):
+    mapping = {"preventive": 0, "corrective": 1, "predictive": 2}
+    return mapping.get((value or "").strip().lower(), 0)
+
+
+def _encode_weather(value):
+    mapping = {"clear": 0, "sunny": 0, "rainy": 1, "snowy": 2, "windy": 3}
+    return mapping.get((value or "").strip().lower(), 0)
+
+
+def _encode_road(value):
+    mapping = {"highway": 0, "urban": 1, "rural": 2}
+    return mapping.get((value or "").strip().lower(), 0)
+
+
+def _encode_vehicle_type(value):
+    mapping = {"van": 0, "truck": 1, "bus": 2, "car": 3}
+    return mapping.get((value or "").strip().lower(), 0)
+
+
+def _encode_route_info(origin, destination):
+    text = f"{origin or ''} {destination or ''}".lower()
+    if "urban" in text:
+        return 1
+    if "rural" in text:
+        return 2
+    return 0
 
 
 def home(request):
@@ -460,69 +490,14 @@ def manager_home(request):
     vehicles_in_maintenance = Vehicle.objects.filter(
         status__in=[Vehicle.STATUS_MAINTENANCE, Vehicle.STATUS_MAINT_REQUIRED]
     ).count()
-    fuel_alerts = Alert.objects.filter(alert_type=Alert.TYPE_FUEL, is_resolved=False).count()
-
     dashboard_data = {
         'total_vehicles': total_vehicles,
         'total_drivers': total_drivers,
         'active_trips': active_trips,
         'pending_trips': pending_trips,
         'vehicles_in_maintenance': vehicles_in_maintenance,
-        'fuel_alerts': fuel_alerts,
     }
     return render(request, 'manager_home.html', {'reg': reg, **dashboard_data})
-
-
-@login_required(login_url='login')
-@role_required('manager')
-def manager_fuel_alerts(request):
-    reg_id = request.session.get('reg_id')
-    reg = Registration.objects.filter(id=reg_id).first()
-
-    alerts = Alert.objects.filter(alert_type=Alert.TYPE_FUEL).select_related(
-        "vehicle", "driver", "driver__user", "trip"
-    )
-
-    severity = (request.GET.get("severity") or "").strip()
-    status = (request.GET.get("status") or "open").strip()
-    trip_id = (request.GET.get("trip_id") or "").strip()
-    date_from = (request.GET.get("date_from") or "").strip()
-    date_to = (request.GET.get("date_to") or "").strip()
-
-    if severity in {Alert.SEVERITY_LOW, Alert.SEVERITY_MEDIUM, Alert.SEVERITY_HIGH}:
-        alerts = alerts.filter(severity=severity)
-    if status == "open":
-        alerts = alerts.filter(is_resolved=False)
-    elif status == "resolved":
-        alerts = alerts.filter(is_resolved=True)
-    if trip_id.isdigit():
-        alerts = alerts.filter(trip_id=int(trip_id))
-    if date_from:
-        alerts = alerts.filter(created_at__date__gte=date_from)
-    if date_to:
-        alerts = alerts.filter(created_at__date__lte=date_to)
-
-    alerts = alerts.order_by("-created_at")
-    return render(
-        request,
-        "manager_fuel_alerts.html",
-        {"reg": reg, "alerts": alerts},
-    )
-
-
-@login_required(login_url='login')
-@role_required('manager')
-def resolve_fuel_alert(request, alert_id):
-    alert = Alert.objects.filter(id=alert_id, alert_type=Alert.TYPE_FUEL).first()
-    if not alert:
-        messages.error(request, "Fuel alert not found.")
-        return redirect("manager_fuel_alerts")
-
-    alert.is_resolved = True
-    alert.resolved_at = timezone.now()
-    alert.save(update_fields=["is_resolved", "resolved_at"])
-    messages.success(request, "Fuel alert marked as resolved.")
-    return redirect("manager_fuel_alerts")
 
 
 @login_required(login_url='login')
@@ -658,7 +633,7 @@ def manager_completed_trips(request):
         response["Content-Disposition"] = 'attachment; filename="manager_completed_trips.csv"'
         writer = csv.writer(response)
         writer.writerow(
-            ["Trip ID", "Driver", "Vehicle", "Origin", "Destination", "Date", "Fuel Used", "Status"]
+            ["Trip ID", "Driver", "Vehicle", "Origin", "Destination", "Date", "Status"]
         )
         for trip in trips:
             writer.writerow(
@@ -669,7 +644,6 @@ def manager_completed_trips(request):
                     trip.origin,
                     trip.destination,
                     trip.completed_at,
-                    trip.fuel_used_liters,
                     trip.get_status_display(),
                 ]
             )
@@ -742,7 +716,6 @@ def create_trip(request):
         destination = (request.POST.get("destination") or "").strip()
         load_details = (request.POST.get("load_details") or "").strip()
         estimated_distance_km = _to_float(request.POST.get("estimated_distance_km"))
-        expected_fuel_liters = _to_float(request.POST.get("expected_fuel_liters"))
         estimated_time_hours = _to_float(request.POST.get("estimated_time_hours"))
         scheduled_date = (request.POST.get("scheduled_date") or "").strip() or None
 
@@ -761,17 +734,28 @@ def create_trip(request):
             )
             return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
 
-        Trip.objects.create(
+        trip = Trip.objects.create(
             driver=driver,
             vehicle=driver.assigned_vehicle,
             origin=origin,
             destination=destination,
             load_details=load_details or None,
             estimated_distance_km=estimated_distance_km,
-            expected_fuel_liters=expected_fuel_liters,
             estimated_time_hours=estimated_time_hours,
             scheduled_date=scheduled_date,
             status=Trip.STATUS_PENDING,
+        )
+        Alert.objects.create(
+            alert_type=Alert.TYPE_TRIP,
+            severity=Alert.SEVERITY_LOW,
+            title="New Trip Assigned",
+            message=(
+                f"Trip #{trip.id} assigned: {origin} to {destination}. "
+                f"Open My Trips to accept or reject."
+            ),
+            vehicle=driver.assigned_vehicle,
+            driver=driver,
+            trip=trip,
         )
         messages.success(request, "Trip created successfully and marked as Pending.")
         return redirect("trips_page")
@@ -791,7 +775,6 @@ def vehicle_detail(request, vehicle_id):
 
     maintenance_history = vehicle.maintenance_history.order_by("-created_at")
     trip_history = vehicle.trips.select_related("driver", "driver__user").order_by("-created_at")
-    fuel_logs = vehicle.fuel_logs.select_related("driver", "driver__user").order_by("-logged_at")
     return render(
         request,
         "vehicle_detail.html",
@@ -800,7 +783,6 @@ def vehicle_detail(request, vehicle_id):
             "vehicle": vehicle,
             "maintenance_history": maintenance_history,
             "trip_history": trip_history,
-            "fuel_logs": fuel_logs,
         },
     )
 
@@ -878,7 +860,6 @@ def driver_detail(request, driver_id):
         return redirect("drivers_page")
 
     trips = Trip.objects.filter(driver=driver).select_related("vehicle").order_by("-created_at")
-    fuel_logs = FuelLog.objects.filter(driver=driver).select_related("vehicle").order_by("-logged_at")
     maintenance_alerts = driver.alerts.filter(
         alert_type="maintenance"
     ).select_related("vehicle").order_by("-created_at")
@@ -889,7 +870,6 @@ def driver_detail(request, driver_id):
             "reg": reg,
             "driver": driver,
             "trips": trips,
-            "fuel_logs": fuel_logs,
             "maintenance_alerts": maintenance_alerts,
         },
     )
@@ -1062,7 +1042,6 @@ def trip_complete_form(request, trip_id):
         return redirect("driver_trips")
 
     if request.method == "POST":
-        fuel_used_liters = _to_float(request.POST.get("fuel_used_liters"))
         engine_temp = _to_float(request.POST.get("engine_temp"))
         oil_quality = _to_float(request.POST.get("oil_quality"))
         brake_condition = _normalize_brake_condition(request.POST.get("brake_condition"))
@@ -1071,25 +1050,20 @@ def trip_complete_form(request, trip_id):
         end_lat = _to_float(request.POST.get("end_lat"))
         end_lng = _to_float(request.POST.get("end_lng"))
 
-        if fuel_used_liters is None:
-            messages.error(request, "Fuel used is required.")
-            return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
         if engine_temp is None or oil_quality is None or brake_condition is None:
-            messages.error(request, "Fuel used, engine temperature, oil quality, and brake condition are required.")
+            messages.error(request, "Engine temperature, oil quality, and brake condition are required.")
             return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
         if end_lat is None or end_lng is None:
             messages.error(request, "Unable to capture end GPS location. Allow location access and submit again.")
             return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
 
         completion, _ = TripCompletion.objects.get_or_create(trip=trip)
-        completion.fuel_filled = fuel_used_liters
         completion.engine_temp = engine_temp
         completion.oil_quality = oil_quality
         completion.brake_condition = brake_condition
         completion.weather = weather
         completion.road_condition = road_condition
         completion.save()
-        trip.fuel_used_liters = fuel_used_liters
         trip.status = Trip.STATUS_COMPLETED
         trip.completed_at = timezone.now()
         trip.weather_conditions = weather
@@ -1101,7 +1075,6 @@ def trip_complete_form(request, trip_id):
             trip.actual_distance_km = _haversine_km(trip.start_lat, trip.start_lng, end_lat, end_lng)
         trip.save(
             update_fields=[
-                "fuel_used_liters",
                 "status",
                 "completed_at",
                 "weather_conditions",
@@ -1113,34 +1086,56 @@ def trip_complete_form(request, trip_id):
             ]
         )
 
-        fuel_alert_triggered = False
-        fuel_alert_severity = Alert.SEVERITY_MEDIUM
-        fuel_alert_message = None
-        expected_fuel = trip.expected_fuel_liters
-        if expected_fuel and expected_fuel > 0:
-            over_pct = ((fuel_used_liters - expected_fuel) / expected_fuel) * 100
-            if over_pct >= 20:
-                fuel_alert_triggered = True
-                fuel_alert_severity = Alert.SEVERITY_HIGH if over_pct >= 35 else Alert.SEVERITY_MEDIUM
-                fuel_alert_message = (
-                    f"Fuel overuse on trip #{trip.id}: expected {expected_fuel:.2f} L, "
-                    f"actual {fuel_used_liters:.2f} L ({over_pct:.1f}% higher)."
-                )
+        prediction = predict_maintenance_for_trip(
+            trip=trip,
+            completion=completion,
+        )
+        maintenance_required = bool(prediction["maintenance_required"])
+        predictive_score = _to_float(prediction.get("predictive_score")) or 0.0
 
-        FuelLog.objects.create(
+        latest_maintenance = trip.vehicle.maintenance_history.order_by("-created_at").first()
+        ml_record = MLFeatureRecord.objects.create(
             vehicle=trip.vehicle,
             driver=driver,
             trip=trip,
-            liters=fuel_used_liters,
-            fuel_consumption=fuel_used_liters,
-            is_anomaly=fuel_alert_triggered,
+            year_of_manufacture=trip.vehicle.year_of_manufacture,
+            vehicle_type=_encode_vehicle_type(trip.vehicle.vehicle_type),
+            usage_hours=trip.vehicle.usage_hours,
+            route_info=_encode_route_info(trip.origin, trip.destination),
+            load_capacity=trip.vehicle.load_capacity,
+            actual_load=trip.actual_load,
+            maintenance_type=_encode_maintenance_type(getattr(latest_maintenance, "maintenance_type", None)),
+            maintenance_cost=getattr(latest_maintenance, "maintenance_cost", None),
+            engine_temperature=engine_temp,
+            tire_pressure=getattr(latest_maintenance, "tire_pressure", None),
+            battery_status=trip.vehicle.battery_status,
+            vibration_levels=getattr(latest_maintenance, "vibration_levels", None),
+            oil_quality=oil_quality,
+            brake_condition=brake_condition,
+            failure_history=trip.vehicle.maintenance_history.filter(is_resolved=False).count(),
+            anomalies_detected=0,
+            predictive_score=predictive_score,
+            maintenance_required=1 if maintenance_required else 0,
+            weather_conditions=_encode_weather(weather),
+            road_conditions=_encode_road(road_condition),
+            delivery_times=completion.actual_delivery_time,
+            downtime_maintenance=getattr(latest_maintenance, "downtime_maintenance", None),
+            impact_on_efficiency=getattr(latest_maintenance, "impact_on_efficiency", None),
+            maintenance_year=timezone.now().year,
+            maintenance_month=timezone.now().month,
         )
 
-        maintenance_required = False
-        if (engine_temp is not None and engine_temp >= 110) or (
-            brake_condition is not None and brake_condition < 40
-        ) or (oil_quality is not None and oil_quality < 50):
-            maintenance_required = True
+        prediction_result = PredictionResult.objects.create(
+            record=ml_record,
+            vehicle=trip.vehicle,
+            driver=driver,
+            trip=trip,
+            model_name=prediction.get("model_name") or "maintenance_model",
+            model_version=prediction.get("model_version") or "v1",
+            predictive_score=predictive_score,
+            anomalies_detected=False,
+            maintenance_required=maintenance_required,
+        )
 
         driver.status = Driver.STATUS_ASSIGNED if driver.assigned_vehicle else Driver.STATUS_AVAILABLE
         driver.save(update_fields=["status"])
@@ -1155,20 +1150,14 @@ def trip_complete_form(request, trip_id):
                 alert_type=Alert.TYPE_MAINTENANCE,
                 severity=Alert.SEVERITY_HIGH,
                 title="Predictive Maintenance Alert",
-                message=f"Vehicle {trip.vehicle.plate_number} flagged after trip #{trip.id}.",
+                message=(
+                    f"Vehicle {trip.vehicle.plate_number} flagged after trip #{trip.id}. "
+                    f"Predictive score: {predictive_score:.3f}."
+                ),
                 vehicle=trip.vehicle,
                 driver=driver,
                 trip=trip,
-            )
-        if fuel_alert_triggered and fuel_alert_message:
-            Alert.objects.create(
-                alert_type=Alert.TYPE_FUEL,
-                severity=fuel_alert_severity,
-                title="Fuel Consumption Alert",
-                message=fuel_alert_message,
-                vehicle=trip.vehicle,
-                driver=driver,
-                trip=trip,
+                prediction=prediction_result,
             )
 
         messages.success(request, "Trip completed successfully.")
@@ -1201,14 +1190,13 @@ def driver_completed_trips(request):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="driver_completed_trips.csv"'
         writer = csv.writer(response)
-        writer.writerow(["Trip ID", "Vehicle", "Date", "Fuel Used", "Delivery Time", "Status"])
+        writer.writerow(["Trip ID", "Vehicle", "Date", "Delivery Time", "Status"])
         for trip in trips:
             writer.writerow(
                 [
                     trip.id,
                     trip.vehicle.plate_number,
                     trip.completed_at,
-                    trip.fuel_used_liters,
                     trip.delivery_times,
                     trip.get_status_display(),
                 ]
@@ -1225,6 +1213,66 @@ def driver_vehicle_detail(request):
     reg = Registration.objects.filter(id=reg_id).first()
     driver, _ = Driver.objects.get_or_create(user=request.user)
     return render(request, "driver_vehicle_detail.html", {"reg": reg, "vehicle": driver.assigned_vehicle})
+
+
+@login_required(login_url='login')
+def change_password_view(request):
+    reg = Registration.objects.filter(user=request.user).first()
+    if not reg:
+        messages.error(request, "User role not found. Contact admin.")
+        return redirect("login")
+
+    role_to_base = {
+        "admin": "base_admin.html",
+        "manager": "base_manager.html",
+        "driver": "base_driver.html",
+    }
+    role_to_home = {
+        "admin": "admin_home",
+        "manager": "manager_home",
+        "driver": "driver_home",
+    }
+    base_template = role_to_base.get(reg.user_role, "base_home.html")
+    home_url_name = role_to_home.get(reg.user_role, "home")
+
+    if request.method == "POST":
+        current_password = request.POST.get("current_password") or ""
+        new_password = request.POST.get("new_password") or ""
+        confirm_password = request.POST.get("confirm_password") or ""
+
+        if not request.user.check_password(current_password):
+            messages.error(request, "Current password is incorrect.")
+            return render(
+                request,
+                "change_password.html",
+                {"reg": reg, "base_template": base_template, "home_url_name": home_url_name},
+            )
+        if not new_password:
+            messages.error(request, "New password is required.")
+            return render(
+                request,
+                "change_password.html",
+                {"reg": reg, "base_template": base_template, "home_url_name": home_url_name},
+            )
+        if new_password != confirm_password:
+            messages.error(request, "New password and confirm password do not match.")
+            return render(
+                request,
+                "change_password.html",
+                {"reg": reg, "base_template": base_template, "home_url_name": home_url_name},
+            )
+
+        request.user.set_password(new_password)
+        request.user.save(update_fields=["password"])
+        update_session_auth_hash(request, request.user)
+        messages.success(request, "Password updated successfully.")
+        return redirect("change_password")
+
+    return render(
+        request,
+        "change_password.html",
+        {"reg": reg, "base_template": base_template, "home_url_name": home_url_name},
+    )
 
 
 def logout_view(request):

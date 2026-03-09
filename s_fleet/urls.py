@@ -22,8 +22,6 @@ urlpatterns = [
     path('manager/vehicles/', views.vehicles_page, name='vehicles_page'),
     path('manager/drivers/', views.drivers_page, name='drivers_page'),
     path('manager/trips/', views.trips_page, name='trips_page'),
-    path('manager/alerts/fuel/', views.manager_fuel_alerts, name='manager_fuel_alerts'),
-    path('manager/alerts/fuel/<int:alert_id>/resolve/', views.resolve_fuel_alert, name='resolve_fuel_alert'),
     path('manager/reports/completed-trips/', views.manager_completed_trips, name='manager_completed_trips'),
     path('manager/vehicles/create/', views.vehicle_create, name='vehicle_create'),
     path('manager/vehicles/<int:vehicle_id>/', views.vehicle_detail, name='vehicle_detail'),
@@ -39,5 +37,6 @@ urlpatterns = [
     path('driver/trips/<int:trip_id>/complete/', views.trip_complete_form, name='trip_complete_form'),
     path('driver/reports/completed-trips/', views.driver_completed_trips, name='driver_completed_trips'),
     path('driver/vehicle/', views.driver_vehicle_detail, name='driver_vehicle_detail'),
+    path('password/change/', views.change_password_view, name='change_password'),
     path('logout/', views.logout_view, name='logout'),
 ]

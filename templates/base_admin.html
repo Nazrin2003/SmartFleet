@@ -112,6 +112,7 @@
             <a href="{% url 'manager_list_adm' %}" class="{% if request.resolver_match.url_name == 'manager_list_adm' or request.resolver_match.url_name == 'add_manager_adm' or request.resolver_match.url_name == 'edit_manager_adm' %}active{% endif %}"><i class="fas fa-user-tie"></i> Managers</a>
             <a href="{% url 'driver_list_adm' %}" class="{% if request.resolver_match.url_name == 'driver_list_adm' or request.resolver_match.url_name == 'add_driver_adm' or request.resolver_match.url_name == 'edit_driver_adm' %}active{% endif %}"><i class="fas fa-id-badge"></i> Drivers</a>
             <a href="{% url 'trips_admin' %}" class="{% if request.resolver_match.url_name == 'trips_admin' %}active{% endif %}"><i class="fas fa-route"></i> Trips</a>
+            <a href="{% url 'change_password' %}" class="{% if request.resolver_match.url_name == 'change_password' %}active{% endif %}"><i class="fas fa-key"></i> Change Password</a>
         </aside>
         <main class="main">
             {% if messages %}

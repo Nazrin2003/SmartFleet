@@ -1,0 +1,24 @@
+{
+  "model_name": "maintenance_random_forest",
+  "model_version": "v1",
+  "maintenance_threshold": 0.55,
+  "feature_columns": [
+    "Engine_Temperature",
+    "Tire_Pressure",
+    "Failure_History",
+    "Battery_Status",
+    "Vibration_Levels",
+    "Oil_Quality",
+    "Brake_Condition",
+    "Delivery_Times",
+    "Vehicle_Age",
+    "Usage_Category",
+    "Load_Percentage",
+    "Since_Last_Maintenance",
+    "Weather_Conditions_Rainy",
+    "Weather_Conditions_Snowy",
+    "Weather_Conditions_Windy",
+    "Road_Conditions_Rural",
+    "Road_Conditions_Urban"
+  ]
+}

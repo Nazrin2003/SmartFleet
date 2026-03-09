@@ -2,7 +2,6 @@ from django.contrib import admin
 from .models import (
     Alert,
     Driver,
-    FuelLog,
     MLFeatureRecord,
     MaintenanceRecord,
     PredictionResult,
@@ -17,7 +16,6 @@ admin.site.register(Vehicle)
 admin.site.register(Driver)
 admin.site.register(Trip)
 admin.site.register(TripCompletion)
-admin.site.register(FuelLog)
 admin.site.register(MaintenanceRecord)
 admin.site.register(MLFeatureRecord)
 admin.site.register(PredictionResult)

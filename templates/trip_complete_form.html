@@ -13,7 +13,7 @@
 <section class="hero hero-complete">
     <div>
         <h2>Complete Trip #{{ trip.id }}</h2>
-        <p>Submit maintenance inputs and actual fuel used for this completed trip.</p>
+        <p>Submit maintenance inputs for this completed trip.</p>
     </div>
 </section>
 <div class="form-panel">
@@ -22,7 +22,6 @@
     <input type="hidden" name="end_lat" id="end-lat">
     <input type="hidden" name="end_lng" id="end-lng">
     <div class="form-grid">
-    <p><label>Fuel_Used_Liters</label><br><input type="number" step="0.01" name="fuel_used_liters" placeholder="e.g., 18.5" required></p>
     <p><label>Engine_Temperature</label><br><input type="number" step="0.01" name="engine_temp" placeholder="e.g., 120" required></p>
     <p><label>Oil_Quality</label><br><input type="number" step="0.01" name="oil_quality" placeholder="e.g., 80.39" required></p>
     <p>
@@ -56,7 +55,6 @@
         </select>
     </p>
     </div>
-    <p style="margin-top:10px;font-size:.86rem;color:#6b7280;">Fuel alert triggers automatically when actual fuel is 20%+ higher than expected fuel set by manager.</p>
     <button class="btn success" type="submit">Submit</button>
 </form>
 </div>

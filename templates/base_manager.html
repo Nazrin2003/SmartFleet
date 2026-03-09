@@ -215,8 +215,8 @@
             <a href="{% url 'vehicles_page' %}" class="{% if request.resolver_match.url_name == 'vehicles_page' %}active{% endif %}">Vehicles</a>
             <a href="{% url 'drivers_page' %}" class="{% if request.resolver_match.url_name == 'drivers_page' %}active{% endif %}">Drivers</a>
             <a href="{% url 'trips_page' %}" class="{% if request.resolver_match.url_name == 'trips_page' %}active{% endif %}">Trips</a>
-            <a href="{% url 'manager_fuel_alerts' %}" class="{% if request.resolver_match.url_name == 'manager_fuel_alerts' %}active{% endif %}">Fuel Alerts</a>
             <a href="{% url 'manager_completed_trips' %}" class="{% if request.resolver_match.url_name == 'manager_completed_trips' %}active{% endif %}">Reports</a>
+            <a href="{% url 'change_password' %}" class="{% if request.resolver_match.url_name == 'change_password' %}active{% endif %}">Change Password</a>
         </aside>
         <main class="main">
             {% if messages %}

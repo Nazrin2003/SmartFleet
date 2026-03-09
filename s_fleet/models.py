@@ -105,11 +105,9 @@ class Trip(models.Model):
     load_details = models.CharField(max_length=200, blank=True, null=True)
     actual_load = models.FloatField(blank=True, null=True)
     estimated_distance_km = models.FloatField(blank=True, null=True)
-    expected_fuel_liters = models.FloatField(blank=True, null=True)
     estimated_time_hours = models.FloatField(blank=True, null=True)
     scheduled_date = models.DateField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
-    fuel_used_liters = models.FloatField(blank=True, null=True)
     weather_conditions = models.CharField(max_length=80, blank=True, null=True)
     road_conditions = models.CharField(max_length=80, blank=True, null=True)
     delivery_times = models.FloatField(blank=True, null=True)
@@ -131,8 +129,6 @@ class Trip(models.Model):
 class TripCompletion(models.Model):
     trip = models.OneToOneField(Trip, on_delete=models.CASCADE, related_name="completion")
     actual_delivery_time = models.FloatField(blank=True, null=True)
-    fuel_filled = models.FloatField(blank=True, null=True)
-    fuel_cost = models.FloatField(blank=True, null=True)
     odometer_reading = models.FloatField(blank=True, null=True)
     engine_temp = models.FloatField(blank=True, null=True)
     oil_quality = models.FloatField(blank=True, null=True)
@@ -143,20 +139,6 @@ class TripCompletion(models.Model):
 
     def __str__(self):
         return f"Completion for Trip #{self.trip_id}"
-
-
-class FuelLog(models.Model):
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="fuel_logs")
-    driver = models.ForeignKey(Driver, on_delete=models.SET_NULL, blank=True, null=True, related_name="fuel_logs")
-    trip = models.ForeignKey(Trip, on_delete=models.SET_NULL, blank=True, null=True, related_name="fuel_logs")
-    liters = models.FloatField()
-    cost = models.FloatField(blank=True, null=True)
-    fuel_consumption = models.FloatField(blank=True, null=True)
-    is_anomaly = models.BooleanField(default=False)
-    logged_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"FuelLog #{self.id} ({self.vehicle.plate_number})"
 
 
 class MaintenanceRecord(models.Model):
@@ -206,7 +188,6 @@ class MLFeatureRecord(models.Model):
     maintenance_cost = models.FloatField(blank=True, null=True)
     engine_temperature = models.FloatField(blank=True, null=True)
     tire_pressure = models.FloatField(blank=True, null=True)
-    fuel_consumption = models.FloatField(blank=True, null=True)
     battery_status = models.FloatField(blank=True, null=True)
     vibration_levels = models.FloatField(blank=True, null=True)
     oil_quality = models.FloatField(blank=True, null=True)
@@ -246,11 +227,11 @@ class PredictionResult(models.Model):
 
 class Alert(models.Model):
     TYPE_MAINTENANCE = "maintenance"
-    TYPE_FUEL = "fuel"
+    TYPE_TRIP = "trip"
     TYPE_DRIVER_RISK = "driver_risk"
     TYPE_CHOICES = [
         (TYPE_MAINTENANCE, "Maintenance"),
-        (TYPE_FUEL, "Fuel"),
+        (TYPE_TRIP, "Trip"),
         (TYPE_DRIVER_RISK, "Driver Risk"),
     ]
 

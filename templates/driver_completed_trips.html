@@ -34,7 +34,7 @@
 </div>
 <div class="panel">
 <table>
-    <thead><tr><th>Trip ID</th><th>Vehicle</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Date</th><th>Fuel Used</th><th>Delivery Time</th><th>Status</th></tr></thead>
+    <thead><tr><th>Trip ID</th><th>Vehicle</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Date</th><th>Delivery Time</th><th>Status</th></tr></thead>
     <tbody>
     {% for trip in trips %}
     <tr>
@@ -44,12 +44,11 @@
         <td>{% if trip.end_address %}{{ trip.end_address }}{% elif trip.end_lat and trip.end_lng %}{{ trip.end_lat }}, {{ trip.end_lng }}{% else %}-{% endif %}</td>
         <td>{{ trip.actual_distance_km|default:"-" }}</td>
         <td>{{ trip.completed_at }}</td>
-        <td>{{ trip.fuel_used_liters }}</td>
         <td>{% if trip.completion %}{{ trip.completion.actual_delivery_time }}{% endif %}</td>
         <td><span class="badge">{{ trip.get_status_display }}</span></td>
     </tr>
     {% empty %}
-    <tr><td colspan="9">No completed trips.</td></tr>
+    <tr><td colspan="8">No completed trips.</td></tr>
     {% endfor %}
     </tbody>
 </table>
