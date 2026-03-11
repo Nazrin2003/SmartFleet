@@ -328,6 +328,51 @@
     .empty-state p {
         font-size: 1.1rem;
     }
+    .vehicle-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%);
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 6px 18px rgba(111, 66, 193, 0.12);
+        margin-bottom: 1rem;
+        border: 1px solid #e7d8fb;
+        position: relative;
+        overflow: hidden;
+    }
+    .vehicle-card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 140px;
+        height: 140px;
+        background: radial-gradient(circle at top right, rgba(155, 89, 182, 0.18), transparent 65%);
+        pointer-events: none;
+    }
+    .vehicle-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+    }
+    .vehicle-item {
+        background: #ffffff;
+        border: 1px solid #eadff8;
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 4px 10px rgba(111, 66, 193, 0.08);
+    }
+    .vehicle-item h4 {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6f42c1;
+        margin-bottom: 4px;
+        font-weight: 700;
+    }
+    .vehicle-item p {
+        font-weight: 800;
+        color: #1f2937;
+        font-size: 1rem;
+    }
 
     /* Responsive Design */
     @media (max-width: 768px) {
@@ -414,11 +459,46 @@
             <i class="fas fa-file-alt"></i>
             My Reports
         </a>
-        <a class="action-btn secondary" href="{% url 'driver_vehicle_detail' %}">
+    </div>
+
+    {% if assigned_vehicle %}
+    <div class="vehicle-card">
+        <h3 class="section-title">
             <i class="fas fa-car"></i>
-            Vehicle Details
-        </a>
-</div>
+            Assigned Vehicle Details
+        </h3>
+        <div class="vehicle-grid">
+            <div class="vehicle-item">
+                <h4>Plate Number</h4>
+                <p>{{ assigned_vehicle.plate_number }}</p>
+            </div>
+            <div class="vehicle-item">
+                <h4>Model</h4>
+                <p>{{ assigned_vehicle.model_name }}</p>
+            </div>
+            <div class="vehicle-item">
+                <h4>Year</h4>
+                <p>{{ assigned_vehicle.year_of_manufacture|default:"-" }}</p>
+            </div>
+            <div class="vehicle-item">
+                <h4>Type</h4>
+                <p>{{ assigned_vehicle.vehicle_type|default:"-" }}</p>
+            </div>
+            <div class="vehicle-item">
+                <h4>Load Capacity</h4>
+                <p>{{ assigned_vehicle.load_capacity|default:"-" }}</p>
+            </div>
+            <div class="vehicle-item">
+                <h4>Usage Hours</h4>
+                <p>{{ assigned_vehicle.usage_hours|default:"-" }}</p>
+            </div>
+            <div class="vehicle-item">
+                <h4>Battery Status</h4>
+                <p>{{ assigned_vehicle.battery_status|default:"-" }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Recent Notifications -->
     <div class="notifications-section">

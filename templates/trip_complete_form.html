@@ -7,6 +7,9 @@
     .form-panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:14px; max-width: 900px; }
     .form-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:8px 14px; }
     .form-grid p { margin: 0; }
+    .expense-panel { margin-top: 12px; }
+    .expense-table th, .expense-table td { padding: 8px; }
+    .expense-actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
 </style>
 {% endblock %}
 {% block content %}
@@ -55,6 +58,28 @@
         </select>
     </p>
     </div>
+    <div class="expense-panel">
+        <h3>Trip Expenses</h3>
+        <table class="expense-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="expense-body">
+                <tr>
+                    <td><input type="text" name="expense_desc[]" placeholder="Toll, Parking, Fuel Refill"></td>
+                    <td><input type="number" step="0.01" name="expense_amount[]" placeholder="0.00"></td>
+                    <td><button class="btn danger" type="button" onclick="removeExpenseRow(this)">Remove</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="expense-actions">
+            <button class="btn info" type="button" onclick="addExpenseRow()">Add Expense</button>
+        </div>
+    </div>
     <button class="btn success" type="submit">Submit</button>
 </form>
 </div>
@@ -86,5 +111,22 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     });
 });
+
+function addExpenseRow() {
+    const tbody = document.getElementById('expense-body');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" name="expense_desc[]" placeholder="Toll, Parking, Fuel Refill"></td>
+        <td><input type="number" step="0.01" name="expense_amount[]" placeholder="0.00"></td>
+        <td><button class="btn danger" type="button" onclick="removeExpenseRow(this)">Remove</button></td>
+    `;
+    tbody.appendChild(row);
+}
+
+function removeExpenseRow(btn) {
+    const tbody = document.getElementById('expense-body');
+    if (tbody.rows.length <= 1) return;
+    btn.closest('tr').remove();
+}
 </script>
 {% endblock %}

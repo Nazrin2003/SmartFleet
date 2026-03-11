@@ -8,6 +8,9 @@ from .models import (
     Registration,
     Trip,
     TripCompletion,
+    TripExpense,
+    TripItem,
+    TripPayment,
     Vehicle,
 )
 
@@ -16,6 +19,9 @@ admin.site.register(Vehicle)
 admin.site.register(Driver)
 admin.site.register(Trip)
 admin.site.register(TripCompletion)
+admin.site.register(TripItem)
+admin.site.register(TripExpense)
+admin.site.register(TripPayment)
 admin.site.register(MaintenanceRecord)
 admin.site.register(MLFeatureRecord)
 admin.site.register(PredictionResult)

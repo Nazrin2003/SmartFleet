@@ -7,13 +7,17 @@
     .form-panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:14px; max-width:980px; }
     .form-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); gap:8px 14px; }
     .form-grid p { margin:0; }
+    .items-panel { margin-top: 12px; }
+    .items-table th, .items-table td { padding: 8px; }
+    .items-actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .items-table input, .items-table select { max-width: 100%; }
 </style>
 {% endblock %}
 {% block content %}
 <section class="hero hero-trip-create">
     <div>
         <h2>Create Trip</h2>
-        <p>Schedule a dispatch with driver, route, and estimated trip details.</p>
+        <p>Schedule a dispatch with driver, route, and delivery item details.</p>
     </div>
 </section>
 <div class="form-panel">
@@ -36,8 +40,84 @@
     <p><label>Estimated Time (hours)</label><br><input type="number" step="0.01" name="estimated_time_hours"></p>
     <p><label>Scheduled Date</label><br><input type="date" name="scheduled_date"></p>
     </div>
+    <div class="items-panel">
+        <h3>Delivery Items</h3>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Qty</th>
+                    <th>Unit Weight</th>
+                    <th>Total Weight</th>
+                    <th>Fragile</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="items-body">
+                <tr>
+                    <td><input type="text" name="item_name[]" required></td>
+                    <td><input type="number" name="item_quantity[]" min="1" value="1"></td>
+                    <td><input type="number" step="0.01" name="item_unit_weight[]"></td>
+                    <td><input type="number" step="0.01" name="item_total_weight[]" readonly></td>
+                    <td>
+                        <select name="item_fragile[]">
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                        </select>
+                    </td>
+                    <td><button class="btn danger" type="button" onclick="removeItemRow(this)">Remove</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="items-actions">
+            <button class="btn info" type="button" onclick="addItemRow()">Add Item</button>
+        </div>
+    </div>
     <button class="btn success" type="submit">Create</button>
     <a class="btn secondary" href="{% url 'trips_page' %}">Cancel</a>
 </form>
 </div>
+<script>
+function calcRowTotal(row) {
+    const qty = parseFloat(row.querySelector('input[name="item_quantity[]"]').value || 0);
+    const unit = parseFloat(row.querySelector('input[name="item_unit_weight[]"]').value || 0);
+    const total = qty > 0 && unit > 0 ? (qty * unit) : 0;
+    row.querySelector('input[name="item_total_weight[]"]').value = total ? total.toFixed(2) : '';
+}
+
+function addItemRow() {
+    const tbody = document.getElementById('items-body');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" name="item_name[]" required></td>
+        <td><input type="number" name="item_quantity[]" min="1" value="1"></td>
+        <td><input type="number" step="0.01" name="item_unit_weight[]"></td>
+        <td><input type="number" step="0.01" name="item_total_weight[]" readonly></td>
+        <td>
+            <select name="item_fragile[]">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+            </select>
+        </td>
+        <td><button class="btn danger" type="button" onclick="removeItemRow(this)">Remove</button></td>
+    `;
+    tbody.appendChild(row);
+}
+
+function removeItemRow(btn) {
+    const tbody = document.getElementById('items-body');
+    if (tbody.rows.length <= 1) return;
+    btn.closest('tr').remove();
+}
+
+document.addEventListener('input', function (event) {
+    if (
+        event.target.name === 'item_quantity[]' ||
+        event.target.name === 'item_unit_weight[]'
+    ) {
+        const row = event.target.closest('tr');
+        calcRowTotal(row);
+    }
+});
+</script>
 {% endblock %}

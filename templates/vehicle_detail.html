@@ -19,6 +19,11 @@
     </div>
 </section>
 
+<div class="actions">
+    <a class="btn warning" href="{% url 'vehicle_edit' vehicle.id %}">Edit Vehicle</a>
+    <a class="btn secondary" href="{% url 'vehicles_page' %}">Back to Vehicles</a>
+</div>
+
 <div class="meta-grid">
     <div class="meta"><h4>Model</h4><p>{{ vehicle.model_name }}</p></div>
     <div class="meta"><h4>Year</h4><p>{{ vehicle.year_of_manufacture|default:"-" }}</p></div>
@@ -39,7 +44,7 @@
         <tr>
             <td>{{ trip.id }}</td>
             <td>{{ trip.driver.user.username }}</td>
-            <td>{{ trip.origin }} - {{ trip.destination }}</td>
+            <td>{{ trip.planned_origin|default:trip.origin }} - {{ trip.planned_destination|default:trip.destination }}</td>
             <td>{% if trip.start_address %}{{ trip.start_address }}{% elif trip.start_lat and trip.start_lng %}{{ trip.start_lat }}, {{ trip.start_lng }}{% else %}-{% endif %}</td>
             <td>{% if trip.end_address %}{{ trip.end_address }}{% elif trip.end_lat and trip.end_lng %}{{ trip.end_lat }}, {{ trip.end_lng }}{% else %}-{% endif %}</td>
             <td>{{ trip.actual_distance_km|default:"-" }}</td>

@@ -12,7 +12,19 @@ import json
 import math
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
-from .models import Alert, Driver, MLFeatureRecord, PredictionResult, Registration, Trip, TripCompletion, Vehicle
+from .models import (
+    Alert,
+    Driver,
+    MLFeatureRecord,
+    PredictionResult,
+    Registration,
+    Trip,
+    TripCompletion,
+    TripExpense,
+    TripItem,
+    TripPayment,
+    Vehicle,
+)
 from .ml.predictive_maintenance import predict_maintenance_for_trip
 from .decorators import role_required 
 
@@ -102,6 +114,18 @@ def _encode_route_info(origin, destination):
     if "rural" in text:
         return 2
     return 0
+
+
+def _format_location(address, lat, lng):
+    if address:
+        return address
+    if lat is not None and lng is not None:
+        return f"{lat}, {lng}"
+    return "-"
+
+
+PAY_RATE_PER_KM = 12.0
+BASE_TRIP_PAY = 0.0
 
 
 def home(request):
@@ -466,15 +490,15 @@ def trips_report_admin(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="admin_trip_report.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Trip ID', 'Driver', 'Vehicle', 'Origin', 'Destination', 'Status', 'Created At'])
+    writer.writerow(['Trip ID', 'Driver', 'Vehicle', 'Status', 'Actual Start', 'Actual End', 'Created At'])
     for trip in trips:
         writer.writerow([
             trip.id,
             trip.driver.user.username,
             trip.vehicle.plate_number,
-            trip.origin,
-            trip.destination,
             trip.get_status_display(),
+            _format_location(trip.start_address, trip.start_lat, trip.start_lng),
+            _format_location(trip.end_address, trip.end_lat, trip.end_lng),
             trip.created_at,
         ])
     return response
@@ -642,7 +666,7 @@ def manager_completed_trips(request):
         response["Content-Disposition"] = 'attachment; filename="manager_completed_trips.csv"'
         writer = csv.writer(response)
         writer.writerow(
-            ["Trip ID", "Driver", "Vehicle", "Origin", "Destination", "Date", "Status"]
+            ["Trip ID", "Driver", "Vehicle", "Actual Start", "Actual End", "Actual Distance (km)", "Date"]
         )
         for trip in trips:
             writer.writerow(
@@ -650,10 +674,10 @@ def manager_completed_trips(request):
                     trip.id,
                     trip.driver.user.username,
                     trip.vehicle.plate_number,
-                    trip.origin,
-                    trip.destination,
+                    _format_location(trip.start_address, trip.start_lat, trip.start_lng),
+                    _format_location(trip.end_address, trip.end_lat, trip.end_lng),
+                    trip.actual_distance_km,
                     trip.completed_at,
-                    trip.get_status_display(),
                 ]
             )
         return response
@@ -727,12 +751,19 @@ def create_trip(request):
         estimated_distance_km = _to_float(request.POST.get("estimated_distance_km"))
         estimated_time_hours = _to_float(request.POST.get("estimated_time_hours"))
         scheduled_date = (request.POST.get("scheduled_date") or "").strip() or None
+        item_names = request.POST.getlist("item_name[]")
+        item_quantities = request.POST.getlist("item_quantity[]")
+        item_unit_weights = request.POST.getlist("item_unit_weight[]")
+        item_fragile_flags = request.POST.getlist("item_fragile[]")
 
         if not driver_id.isdigit():
             messages.error(request, "Please select a valid driver.")
             return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
         if not origin or not destination:
             messages.error(request, "Origin and destination are required.")
+            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+        if not any((name or "").strip() for name in item_names):
+            messages.error(request, "Please add at least one delivery item.")
             return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
 
         driver = eligible_drivers.filter(id=int(driver_id)).first()
@@ -743,17 +774,37 @@ def create_trip(request):
             )
             return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
 
-        trip = Trip.objects.create(
-            driver=driver,
-            vehicle=driver.assigned_vehicle,
-            origin=origin,
-            destination=destination,
-            load_details=load_details or None,
-            estimated_distance_km=estimated_distance_km,
-            estimated_time_hours=estimated_time_hours,
-            scheduled_date=scheduled_date,
-            status=Trip.STATUS_PENDING,
-        )
+        with transaction.atomic():
+            trip = Trip.objects.create(
+                driver=driver,
+                vehicle=driver.assigned_vehicle,
+                planned_origin=origin,
+                planned_destination=destination,
+                origin=origin,
+                destination=destination,
+                load_details=load_details or None,
+                estimated_distance_km=estimated_distance_km,
+                estimated_time_hours=estimated_time_hours,
+                scheduled_date=scheduled_date,
+                status=Trip.STATUS_PENDING,
+            )
+            for idx, name in enumerate(item_names):
+                item_name = (name or "").strip()
+                if not item_name:
+                    continue
+                quantity = _to_int(item_quantities[idx]) if idx < len(item_quantities) else None
+                unit_weight = _to_float(item_unit_weights[idx]) if idx < len(item_unit_weights) else None
+                total_weight = None
+                if quantity is not None and unit_weight is not None:
+                    total_weight = round(quantity * unit_weight, 3)
+                TripItem.objects.create(
+                    trip=trip,
+                    item_name=item_name,
+                    quantity=quantity if quantity is not None else 1,
+                    unit_weight=unit_weight,
+                    total_weight=total_weight,
+                    is_fragile=(item_fragile_flags[idx] == "yes") if idx < len(item_fragile_flags) else False,
+                )
         Alert.objects.create(
             alert_type=Alert.TYPE_TRIP,
             severity=Alert.SEVERITY_LOW,
@@ -1072,6 +1123,8 @@ def trip_complete_form(request, trip_id):
         road_condition = (request.POST.get("road_condition") or "").strip() or None
         end_lat = _to_float(request.POST.get("end_lat"))
         end_lng = _to_float(request.POST.get("end_lng"))
+        expense_descs = request.POST.getlist("expense_desc[]")
+        expense_amounts = request.POST.getlist("expense_amount[]")
 
         if engine_temp is None or oil_quality is None or brake_condition is None:
             messages.error(request, "Engine temperature, oil quality, and brake condition are required.")
@@ -1124,7 +1177,10 @@ def trip_complete_form(request, trip_id):
             year_of_manufacture=trip.vehicle.year_of_manufacture,
             vehicle_type=_encode_vehicle_type(trip.vehicle.vehicle_type),
             usage_hours=trip.vehicle.usage_hours,
-            route_info=_encode_route_info(trip.origin, trip.destination),
+            route_info=_encode_route_info(
+                trip.planned_origin or trip.origin,
+                trip.planned_destination or trip.destination,
+            ),
             load_capacity=trip.vehicle.load_capacity,
             actual_load=trip.actual_load,
             maintenance_type=_encode_maintenance_type(getattr(latest_maintenance, "maintenance_type", None)),
@@ -1187,6 +1243,55 @@ def trip_complete_form(request, trip_id):
                 prediction=prediction_result,
             )
 
+        expense_total = 0.0
+        TripExpense.objects.filter(trip=trip).delete()
+        for idx, desc in enumerate(expense_descs):
+            description = (desc or "").strip()
+            if not description:
+                continue
+            amount = _to_float(expense_amounts[idx]) if idx < len(expense_amounts) else None
+            if amount is None:
+                continue
+            TripExpense.objects.create(trip=trip, description=description, amount=amount)
+            expense_total += float(amount)
+
+        distance_km = trip.actual_distance_km
+        if distance_km is None:
+            distance_km = trip.estimated_distance_km or 0.0
+        base_amount = BASE_TRIP_PAY + (float(distance_km) * PAY_RATE_PER_KM)
+        total_amount = base_amount + expense_total
+        payment, created = TripPayment.objects.get_or_create(
+            trip=trip,
+            defaults={
+                "driver": driver,
+                "base_amount": base_amount,
+                "expense_total": expense_total,
+                "total_amount": total_amount,
+                "status": TripPayment.STATUS_PENDING,
+            },
+        )
+        if not created and payment.status != TripPayment.STATUS_PAID:
+            payment.driver = driver
+            payment.base_amount = base_amount
+            payment.expense_total = expense_total
+            payment.total_amount = total_amount
+            payment.status = TripPayment.STATUS_PENDING
+            payment.approved_by = None
+            payment.approved_at = None
+            payment.paid_at = None
+            payment.save(
+                update_fields=[
+                    "driver",
+                    "base_amount",
+                    "expense_total",
+                    "total_amount",
+                    "status",
+                    "approved_by",
+                    "approved_at",
+                    "paid_at",
+                ]
+            )
+
         Alert.objects.filter(
             alert_type=Alert.TYPE_TRIP,
             driver=driver,
@@ -1198,6 +1303,73 @@ def trip_complete_form(request, trip_id):
         return redirect("driver_trips")
 
     return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
+
+
+@login_required(login_url="login")
+@role_required("manager")
+def manager_payments(request):
+    reg_id = request.session.get("reg_id")
+    reg = Registration.objects.filter(id=reg_id).first()
+    status = (request.GET.get("status") or "").strip()
+    payments = TripPayment.objects.select_related("trip", "driver", "driver__user")
+    if status in dict(TripPayment.STATUS_CHOICES):
+        payments = payments.filter(status=status)
+    payments = payments.order_by("-created_at")
+    return render(
+        request,
+        "manager_payments.html",
+        {
+            "reg": reg,
+            "payments": payments,
+            "status": status,
+            "status_choices": TripPayment.STATUS_CHOICES,
+        },
+    )
+
+
+@login_required(login_url="login")
+@role_required("manager")
+def approve_payment(request, payment_id):
+    payment = TripPayment.objects.select_related("trip", "driver").filter(id=payment_id).first()
+    if not payment:
+        messages.error(request, "Payment not found.")
+        return redirect("manager_payments")
+    if payment.status == TripPayment.STATUS_PAID:
+        messages.info(request, "Payment already marked as paid.")
+        return redirect("manager_payments")
+    payment.status = TripPayment.STATUS_APPROVED
+    payment.approved_by = request.user
+    payment.approved_at = timezone.now()
+    payment.save(update_fields=["status", "approved_by", "approved_at"])
+    messages.success(request, "Payment approved.")
+    return redirect("manager_payments")
+
+
+@login_required(login_url="login")
+@role_required("manager")
+def pay_driver(request, payment_id):
+    payment = TripPayment.objects.select_related("trip", "driver").filter(id=payment_id).first()
+    if not payment:
+        messages.error(request, "Payment not found.")
+        return redirect("manager_payments")
+    payment.status = TripPayment.STATUS_PAID
+    if payment.approved_by is None:
+        payment.approved_by = request.user
+        payment.approved_at = timezone.now()
+    payment.paid_at = timezone.now()
+    payment.save(update_fields=["status", "approved_by", "approved_at", "paid_at"])
+    messages.success(request, "Payment marked as paid.")
+    return redirect("manager_payments")
+
+
+@login_required(login_url="login")
+@role_required("driver")
+def driver_payments(request):
+    reg_id = request.session.get("reg_id")
+    reg = Registration.objects.filter(id=reg_id).first()
+    driver, _ = Driver.objects.get_or_create(user=request.user)
+    payments = TripPayment.objects.filter(driver=driver).select_related("trip").order_by("-created_at")
+    return render(request, "driver_payments.html", {"reg": reg, "payments": payments})
 
 
 @login_required(login_url='login')
@@ -1224,15 +1396,19 @@ def driver_completed_trips(request):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="driver_completed_trips.csv"'
         writer = csv.writer(response)
-        writer.writerow(["Trip ID", "Vehicle", "Date", "Delivery Time", "Status"])
+        writer.writerow(
+            ["Trip ID", "Vehicle", "Actual Start", "Actual End", "Actual Distance (km)", "Date", "Delivery Time"]
+        )
         for trip in trips:
             writer.writerow(
                 [
                     trip.id,
                     trip.vehicle.plate_number,
+                    _format_location(trip.start_address, trip.start_lat, trip.start_lng),
+                    _format_location(trip.end_address, trip.end_lat, trip.end_lng),
+                    trip.actual_distance_km,
                     trip.completed_at,
                     trip.delivery_times,
-                    trip.get_status_display(),
                 ]
             )
         return response

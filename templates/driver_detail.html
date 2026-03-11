@@ -31,9 +31,10 @@
 </div>
 
 <div class="actions">
-    <a class="btn success" href="{% url 'assign_vehicle' driver.id %}">Assign Vehicle</a>
     {% if driver.assigned_vehicle %}
     <a class="btn warning" href="{% url 'unassign_vehicle' driver.id %}" onclick="return confirm('Unassign this vehicle from driver?')">Unassign Vehicle</a>
+    {% else %}
+    <a class="btn success" href="{% url 'assign_vehicle' driver.id %}">Assign Vehicle</a>
     {% endif %}
 </div>
 
@@ -46,7 +47,7 @@
     <tr>
         <td>{{ trip.id }}</td>
         <td>{{ trip.vehicle.plate_number }}</td>
-        <td>{{ trip.origin }} - {{ trip.destination }}</td>
+        <td>{{ trip.planned_origin|default:trip.origin }} - {{ trip.planned_destination|default:trip.destination }}</td>
         <td>{% if trip.start_address %}{{ trip.start_address }}{% elif trip.start_lat and trip.start_lng %}{{ trip.start_lat }}, {{ trip.start_lng }}{% else %}-{% endif %}</td>
         <td>{% if trip.end_address %}{{ trip.end_address }}{% elif trip.end_lat and trip.end_lng %}{{ trip.end_lat }}, {{ trip.end_lng }}{% else %}-{% endif %}</td>
         <td>{{ trip.actual_distance_km|default:"-" }}</td>

@@ -56,15 +56,15 @@
 </div>
 <div class="panel">
 <table>
-    <thead><tr><th>Trip ID</th><th>Driver</th><th>Vehicle</th><th>Origin</th><th>Destination</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Status</th><th>Date</th></tr></thead>
+    <thead><tr><th>Trip ID</th><th>Driver</th><th>Vehicle</th><th>Planned Origin</th><th>Planned Destination</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Status</th><th>Date</th></tr></thead>
     <tbody>
     {% for trip in trips %}
     <tr>
         <td>{{ trip.id }}</td>
         <td>{{ trip.driver.user.username }}</td>
         <td>{{ trip.vehicle.plate_number }}</td>
-        <td>{{ trip.origin }}</td>
-        <td>{{ trip.destination }}</td>
+        <td>{{ trip.planned_origin|default:trip.origin }}</td>
+        <td>{{ trip.planned_destination|default:trip.destination }}</td>
         <td>{% if trip.start_address %}{{ trip.start_address }}{% elif trip.start_lat and trip.start_lng %}{{ trip.start_lat }}, {{ trip.start_lng }}{% else %}-{% endif %}</td>
         <td>{% if trip.end_address %}{{ trip.end_address }}{% elif trip.end_lat and trip.end_lng %}{{ trip.end_lat }}, {{ trip.end_lng }}{% else %}-{% endif %}</td>
         <td>{{ trip.actual_distance_km|default:"-" }}</td>
@@ -86,5 +86,39 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
+
+<div class="panel">
+    <h3>Trip Item Details</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Trip ID</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Unit Weight</th>
+                <th>Total Weight</th>
+                <th>Fragile</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for trip in trips %}
+            {% for item in trip.items.all %}
+            <tr>
+                <td>{{ trip.id }}</td>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.unit_weight|default:"-" }}</td>
+                <td>{{ item.total_weight|default:"-" }}</td>
+                <td>{% if item.is_fragile %}Yes{% else %}No{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No items recorded for trip #{{ trip.id }}.</td></tr>
+            {% endfor %}
+        {% empty %}
+            <tr><td colspan="6">No trips available.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

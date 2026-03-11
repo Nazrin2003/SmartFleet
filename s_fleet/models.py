@@ -100,6 +100,8 @@ class Trip(models.Model):
 
     driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name="trips")
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="trips")
+    planned_origin = models.CharField(max_length=120, blank=True, null=True)
+    planned_destination = models.CharField(max_length=120, blank=True, null=True)
     origin = models.CharField(max_length=120)
     destination = models.CharField(max_length=120)
     load_details = models.CharField(max_length=200, blank=True, null=True)
@@ -126,6 +128,21 @@ class Trip(models.Model):
         return f"Trip #{self.id} - {self.origin} to {self.destination}"
 
 
+class TripItem(models.Model):
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="items")
+    item_name = models.CharField(max_length=120)
+    item_category = models.CharField(max_length=80, blank=True, null=True)
+    quantity = models.PositiveIntegerField(default=1)
+    unit_weight = models.FloatField(blank=True, null=True)
+    total_weight = models.FloatField(blank=True, null=True)
+    handling_notes = models.CharField(max_length=200, blank=True, null=True)
+    is_fragile = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.item_name} (Trip #{self.trip_id})"
+
+
 class TripCompletion(models.Model):
     trip = models.OneToOneField(Trip, on_delete=models.CASCADE, related_name="completion")
     actual_delivery_time = models.FloatField(blank=True, null=True)
@@ -139,6 +156,45 @@ class TripCompletion(models.Model):
 
     def __str__(self):
         return f"Completion for Trip #{self.trip_id}"
+
+
+class TripExpense(models.Model):
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="expenses")
+    description = models.CharField(max_length=120)
+    amount = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Expense #{self.id} (Trip #{self.trip_id})"
+
+
+class TripPayment(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_PAID = "paid"
+    STATUS_REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_PAID, "Paid"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    trip = models.OneToOneField(Trip, on_delete=models.CASCADE, related_name="payment")
+    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name="payments")
+    base_amount = models.FloatField(default=0.0)
+    expense_total = models.FloatField(default=0.0)
+    total_amount = models.FloatField(default=0.0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    approved_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, blank=True, null=True, related_name="approved_payments"
+    )
+    approved_at = models.DateTimeField(blank=True, null=True)
+    paid_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment for Trip #{self.trip_id}"
 
 
 class MaintenanceRecord(models.Model):

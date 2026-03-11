@@ -269,8 +269,6 @@
             <tr>
                 <th>Vehicle</th>
                 <th>Model</th>
-                <th>Status</th>
-                <th>Assigned Driver</th>
                 <th>Latest Alert</th>
                 <th>Predictive Score</th>
                 <th>Alert Date</th>
@@ -283,8 +281,6 @@
             <tr>
                 <td>{{ vehicle.plate_number }}</td>
                 <td>{{ vehicle.model_name }}</td>
-                <td>{{ vehicle.get_status_display }}</td>
-                <td>{% if vehicle.assigned_driver %}{{ vehicle.assigned_driver.user.username }}{% else %}-{% endif %}</td>
                 <td>{% if alert %}{{ alert.title }}{% else %}Maintenance required{% endif %}</td>
                 <td>
                     {% if alert and alert.prediction %}
@@ -299,7 +295,7 @@
             {% endwith %}
             {% empty %}
             <tr>
-                <td colspan="7">No vehicles currently require maintenance.</td>
+                <td colspan="5">No vehicles currently require maintenance.</td>
             </tr>
             {% endfor %}
         </tbody>
