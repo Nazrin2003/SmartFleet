@@ -431,7 +431,6 @@
             <thead>
                 <tr>
                     <th>Type</th>
-                    <th>Severity</th>
                     <th>Message</th>
                     <th>Date</th>
                 </tr>
@@ -444,17 +443,12 @@
                             {{ item.get_alert_type_display }}
                         </span>
                     </td>
-                    <td>
-                        <span class="badge severity-{{ item.severity }}">
-                            {{ item.get_severity_display }}
-                        </span>
-                    </td>
                     <td>{{ item.message }}</td>
                     <td>{{ item.created_at|date:"M d, Y • g:i A" }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4">
+                    <td colspan="3">
                         <div class="empty-state">
                             <i class="fas fa-bell-slash"></i>
                             <p>No active notifications at this time.</p>
@@ -466,4 +460,5 @@
         </table>
     </div>
 {% endblock %}
+
 

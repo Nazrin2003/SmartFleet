@@ -1,0 +1,48 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}}
+\fs24
+\b SMARTFLEET Project Summary & Updates\b0\par
+\par
+\b Project Capabilities (Current)\b0\par
+1. Role-based login: Admin, Manager, Driver.\par
+2. Admin: manage managers and drivers, block/unblock users, view all trips.\par
+3. Manager: add/manage vehicles, assign/unassign drivers, create trips, view completed trips reports.\par
+4. Driver: view assigned trips, accept/reject, complete trips with vehicle condition data.\par
+5. Predictive Maintenance: on trip completion, model predicts maintenance requirement; vehicle status updates; manager alert created.\par
+6. Notifications: driver gets trip assignment notifications; manager gets maintenance alerts.\par
+7. Reports: completed trips with filters and CSV export.\par
+\par
+\b Teacher Requested Updates\b0\par
+A. Add deliverable item details (not just load weight).\par
+B. Add a payment system concept for driver support/settlement.\par
+\par
+\b Update A: Deliverable Item Details\b0\par
+Purpose: record exact items being delivered for trip verification, auditing, and proof of delivery.\par
+Proposed fields per trip: item name, item category, quantity, unit weight, total weight, handling notes, fragile flag.\par
+Implementation options:\par
+- Simple: add a text field "Items List" on trip creation and completion.\par
+- Structured: create a TripItem table linked to Trip (1 trip -> many items).\par
+Benefit: improves traceability and matches real logistics use cases.\par
+\par
+\b Update B: Payment System (Purpose & Suggested Design)\b0\par
+Why it is useful:\par
+- Drivers are often paid per trip, per km, or per delivery; system can compute and log it automatically.\par
+- Allows reimbursement for tolls, fuel receipts, or extra handling.\par
+- Enables payment transparency for management and drivers.\par
+\par
+Suggested approach (simple and explainable):\par
+1. Trip completion captures delivery distance/time.\par
+2. System computes driver payout using a fixed rate (e.g., per km or per trip).\par
+3. Manager verifies and marks payment as approved/paid.\par
+4. Driver can view payment status in dashboard.\par
+\par
+Optional fields:\par
+- payment_amount, payment_status (pending/approved/paid), approved_by, approved_at.\par
+- reimbursement_amount (if needed).\par
+\par
+\b Next Actions (If Implementing)\b0\par
+1. Add TripItem model (or Items List field).\par
+2. Add payment fields + simple payout calculation logic.\par
+3. Add UI sections in Manager/Driver dashboards for items and payment status.\par
+\par
+}

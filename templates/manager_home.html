@@ -262,22 +262,46 @@
 <div class="alerts-section">
     <h3 class="section-title">
         <i class="fas fa-bell"></i>
-        Operational Alerts
+        Vehicles Requiring Maintenance
     </h3>
     <table class="modern-table">
         <thead>
             <tr>
-                <th>Category</th>
-                <th>Current Count</th>
+                <th>Vehicle</th>
+                <th>Model</th>
                 <th>Status</th>
+                <th>Assigned Driver</th>
+                <th>Latest Alert</th>
+                <th>Predictive Score</th>
+                <th>Alert Date</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
+            {% for vehicle in maintenance_vehicles %}
+            {% with alert=vehicle.maintenance_alerts.0 %}
             <tr>
-                <td>Vehicles Requiring Maintenance</td>
-                <td>{{ vehicles_in_maintenance }}</td>
-                <td>{% if vehicles_in_maintenance > 0 %}Attention Needed{% else %}Normal{% endif %}</td>
+                <td>{{ vehicle.plate_number }}</td>
+                <td>{{ vehicle.model_name }}</td>
+                <td>{{ vehicle.get_status_display }}</td>
+                <td>{% if vehicle.assigned_driver %}{{ vehicle.assigned_driver.user.username }}{% else %}-{% endif %}</td>
+                <td>{% if alert %}{{ alert.title }}{% else %}Maintenance required{% endif %}</td>
+                <td>
+                    {% if alert and alert.prediction %}
+                        {{ alert.prediction.predictive_score|floatformat:3 }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{% if alert %}{{ alert.created_at|date:"M d, Y g:i A" }}{% else %}-{% endif %}</td>
+                <td><a class="btn info" href="{% url 'vehicle_detail' vehicle.id %}">View</a></td>
             </tr>
+            {% endwith %}
+            {% empty %}
+            <tr>
+                <td colspan="7">No vehicles currently require maintenance.</td>
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>

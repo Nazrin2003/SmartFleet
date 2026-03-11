@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import HttpResponse
 from django.utils import timezone
 import csv
@@ -487,15 +487,24 @@ def manager_home(request):
     total_vehicles = Vehicle.objects.count()
     active_trips = Trip.objects.filter(status=Trip.STATUS_IN_PROGRESS).count()
     pending_trips = Trip.objects.filter(status=Trip.STATUS_PENDING).count()
-    vehicles_in_maintenance = Vehicle.objects.filter(
-        status__in=[Vehicle.STATUS_MAINTENANCE, Vehicle.STATUS_MAINT_REQUIRED]
-    ).count()
+    maintenance_statuses = [Vehicle.STATUS_MAINTENANCE, Vehicle.STATUS_MAINT_REQUIRED]
+    maintenance_alerts = Alert.objects.filter(
+        alert_type=Alert.TYPE_MAINTENANCE
+    ).order_by("-created_at")
+    maintenance_vehicles = (
+        Vehicle.objects.filter(status__in=maintenance_statuses)
+        .select_related("assigned_driver", "assigned_driver__user")
+        .prefetch_related(Prefetch("alerts", queryset=maintenance_alerts, to_attr="maintenance_alerts"))
+        .order_by("plate_number")
+    )
+    vehicles_in_maintenance = maintenance_vehicles.count()
     dashboard_data = {
         'total_vehicles': total_vehicles,
         'total_drivers': total_drivers,
         'active_trips': active_trips,
         'pending_trips': pending_trips,
         'vehicles_in_maintenance': vehicles_in_maintenance,
+        'maintenance_vehicles': maintenance_vehicles,
     }
     return render(request, 'manager_home.html', {'reg': reg, **dashboard_data})
 
@@ -954,7 +963,9 @@ def driver_home(request):
     driver, _ = Driver.objects.get_or_create(user=request.user)
     active_trips = Trip.objects.filter(driver=driver, status=Trip.STATUS_IN_PROGRESS).count()
     completed_trips = Trip.objects.filter(driver=driver, status=Trip.STATUS_COMPLETED).count()
-    notifications = driver.alerts.filter(is_resolved=False).order_by("-created_at")
+    notifications = driver.alerts.filter(is_resolved=False).exclude(
+        alert_type=Alert.TYPE_MAINTENANCE
+    ).order_by("-created_at")
     return render(
         request,
         'driver_home.html',
@@ -1014,11 +1025,23 @@ def trip_detail(request, trip_id):
                 trip.vehicle.status = Vehicle.STATUS_IN_TRIP
                 trip.vehicle.save(update_fields=["status", "updated_at"])
                 messages.success(request, "Trip accepted. Status changed to In Progress.")
+                Alert.objects.filter(
+                    alert_type=Alert.TYPE_TRIP,
+                    driver=driver,
+                    trip=trip,
+                    is_resolved=False,
+                ).update(is_resolved=True, resolved_at=timezone.now())
             return redirect("trip_detail", trip_id=trip.id)
 
         if action == "reject" and trip.status == Trip.STATUS_PENDING:
             trip.status = Trip.STATUS_REJECTED
             trip.save(update_fields=["status"])
+            Alert.objects.filter(
+                alert_type=Alert.TYPE_TRIP,
+                driver=driver,
+                trip=trip,
+                is_resolved=False,
+            ).update(is_resolved=True, resolved_at=timezone.now())
             messages.info(request, "Trip rejected.")
             return redirect("driver_trips")
 
@@ -1137,13 +1160,17 @@ def trip_complete_form(request, trip_id):
             maintenance_required=maintenance_required,
         )
 
-        driver.status = Driver.STATUS_ASSIGNED if driver.assigned_vehicle else Driver.STATUS_AVAILABLE
-        driver.save(update_fields=["status"])
+        # Dispatch model: after each completed trip, release driver and vehicle assignment.
+        completed_vehicle = trip.vehicle
+        with transaction.atomic():
+            driver.assigned_vehicle = None
+            driver.status = Driver.STATUS_AVAILABLE
+            driver.save(update_fields=["assigned_vehicle", "status"])
 
-        trip.vehicle.status = (
-            Vehicle.STATUS_MAINT_REQUIRED if maintenance_required else Vehicle.STATUS_ASSIGNED
-        )
-        trip.vehicle.save(update_fields=["status", "updated_at"])
+            completed_vehicle.status = (
+                Vehicle.STATUS_MAINT_REQUIRED if maintenance_required else Vehicle.STATUS_AVAILABLE
+            )
+            completed_vehicle.save(update_fields=["status", "updated_at"])
 
         if maintenance_required:
             Alert.objects.create(
@@ -1154,11 +1181,18 @@ def trip_complete_form(request, trip_id):
                     f"Vehicle {trip.vehicle.plate_number} flagged after trip #{trip.id}. "
                     f"Predictive score: {predictive_score:.3f}."
                 ),
-                vehicle=trip.vehicle,
-                driver=driver,
+                vehicle=completed_vehicle,
+                driver=None,
                 trip=trip,
                 prediction=prediction_result,
             )
+
+        Alert.objects.filter(
+            alert_type=Alert.TYPE_TRIP,
+            driver=driver,
+            trip=trip,
+            is_resolved=False,
+        ).update(is_resolved=True, resolved_at=timezone.now())
 
         messages.success(request, "Trip completed successfully.")
         return redirect("driver_trips")
