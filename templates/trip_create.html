@@ -33,8 +33,20 @@
             {% endfor %}
         </select>
     </p>
-    <p><label>Origin</label><br><input type="text" name="origin" required></p>
-    <p><label>Destination</label><br><input type="text" name="destination" required></p>
+    <p>
+        <label>Origin</label><br>
+        <input type="text" id="origin-input" name="origin" required placeholder="Search place">
+        <input type="hidden" name="planned_origin_place_id" id="origin-place-id">
+        <input type="hidden" name="planned_origin_lat" id="origin-lat">
+        <input type="hidden" name="planned_origin_lng" id="origin-lng">
+    </p>
+    <p>
+        <label>Destination</label><br>
+        <input type="text" id="destination-input" name="destination" required placeholder="Search place">
+        <input type="hidden" name="planned_destination_place_id" id="destination-place-id">
+        <input type="hidden" name="planned_destination_lat" id="destination-lat">
+        <input type="hidden" name="planned_destination_lng" id="destination-lng">
+    </p>
     <p><label>Load</label><br><input type="text" name="load_details"></p>
     <p><label>Estimated Distance (km)</label><br><input type="number" step="0.01" name="estimated_distance_km"></p>
     <p><label>Estimated Time (hours)</label><br><input type="number" step="0.01" name="estimated_time_hours"></p>
@@ -120,4 +132,44 @@ document.addEventListener('input', function (event) {
     }
 });
 </script>
+{% if maps_key %}
+<script>
+function initTripAutocomplete() {
+    const keralaBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(8.0, 74.8),
+        new google.maps.LatLng(12.9, 77.4)
+    );
+    const originInput = document.getElementById("origin-input");
+    const destInput = document.getElementById("destination-input");
+    if (!originInput || !destInput) return;
+
+    const options = {
+        componentRestrictions: { country: "in" },
+        bounds: keralaBounds,
+        fields: ["place_id", "formatted_address", "geometry"],
+        strictBounds: false,
+    };
+
+    const originAuto = new google.maps.places.Autocomplete(originInput, options);
+    const destAuto = new google.maps.places.Autocomplete(destInput, options);
+
+    originAuto.addListener("place_changed", () => {
+        const place = originAuto.getPlace();
+        document.getElementById("origin-place-id").value = place.place_id || "";
+        document.getElementById("origin-lat").value = place.geometry ? place.geometry.location.lat() : "";
+        document.getElementById("origin-lng").value = place.geometry ? place.geometry.location.lng() : "";
+        if (place.formatted_address) originInput.value = place.formatted_address;
+    });
+
+    destAuto.addListener("place_changed", () => {
+        const place = destAuto.getPlace();
+        document.getElementById("destination-place-id").value = place.place_id || "";
+        document.getElementById("destination-lat").value = place.geometry ? place.geometry.location.lat() : "";
+        document.getElementById("destination-lng").value = place.geometry ? place.geometry.location.lng() : "";
+        if (place.formatted_address) destInput.value = place.formatted_address;
+    });
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ maps_key }}&libraries=places&callback=initTripAutocomplete" async defer></script>
+{% endif %}
 {% endblock %}

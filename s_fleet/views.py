@@ -766,6 +766,12 @@ def create_trip(request):
         driver_id = (request.POST.get("driver_id") or "").strip()
         origin = (request.POST.get("origin") or "").strip()
         destination = (request.POST.get("destination") or "").strip()
+        planned_origin_place_id = (request.POST.get("planned_origin_place_id") or "").strip() or None
+        planned_destination_place_id = (request.POST.get("planned_destination_place_id") or "").strip() or None
+        planned_origin_lat = _to_float(request.POST.get("planned_origin_lat"))
+        planned_origin_lng = _to_float(request.POST.get("planned_origin_lng"))
+        planned_destination_lat = _to_float(request.POST.get("planned_destination_lat"))
+        planned_destination_lng = _to_float(request.POST.get("planned_destination_lng"))
         load_details = (request.POST.get("load_details") or "").strip()
         estimated_distance_km = _to_float(request.POST.get("estimated_distance_km"))
         estimated_time_hours = _to_float(request.POST.get("estimated_time_hours"))
@@ -777,13 +783,25 @@ def create_trip(request):
 
         if not driver_id.isdigit():
             messages.error(request, "Please select a valid driver.")
-            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+            return render(
+                request,
+                'trip_create.html',
+                {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+            )
         if not origin or not destination:
             messages.error(request, "Origin and destination are required.")
-            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+            return render(
+                request,
+                'trip_create.html',
+                {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+            )
         if not any((name or "").strip() for name in item_names):
             messages.error(request, "Please add at least one delivery item.")
-            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+            return render(
+                request,
+                'trip_create.html',
+                {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+            )
 
         driver = eligible_drivers.filter(id=int(driver_id)).first()
         if not driver:
@@ -791,7 +809,11 @@ def create_trip(request):
                 request,
                 "Selected driver is not eligible. Driver must have an assigned vehicle and no active trip.",
             )
-            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+            return render(
+                request,
+                'trip_create.html',
+                {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+            )
 
         with transaction.atomic():
             trip = Trip.objects.create(
@@ -799,6 +821,12 @@ def create_trip(request):
                 vehicle=driver.assigned_vehicle,
                 planned_origin=origin,
                 planned_destination=destination,
+                planned_origin_place_id=planned_origin_place_id,
+                planned_destination_place_id=planned_destination_place_id,
+                planned_origin_lat=planned_origin_lat,
+                planned_origin_lng=planned_origin_lng,
+                planned_destination_lat=planned_destination_lat,
+                planned_destination_lng=planned_destination_lng,
                 origin=origin,
                 destination=destination,
                 load_details=load_details or None,
@@ -839,7 +867,11 @@ def create_trip(request):
         messages.success(request, "Trip created successfully and marked as Pending.")
         return redirect("trips_page")
 
-    return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+    return render(
+        request,
+        'trip_create.html',
+        {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+    )
 
 
 @login_required(login_url='login')
@@ -1189,7 +1221,17 @@ def trip_detail(request, trip_id):
         if action == "complete" and trip.status == Trip.STATUS_IN_PROGRESS:
             return redirect("trip_complete_form", trip_id=trip.id)
 
-    return render(request, "trip_detail.html", {"reg": reg, "trip": trip, "show_actions": True})
+    return render(
+        request,
+        "trip_detail.html",
+        {
+            "reg": reg,
+            "trip": trip,
+            "show_actions": True,
+            "show_map": True,
+            "maps_key": settings.GOOGLE_MAPS_API_KEY,
+        },
+    )
 
 
 @login_required(login_url='login')

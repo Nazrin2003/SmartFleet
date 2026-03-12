@@ -66,6 +66,7 @@
     .status-pill.pending { background:#fef3c7; color:#92400e; }
     .status-pill.completed { background:#dcfce7; color:#166534; }
     .status-pill.rejected { background:#fee2e2; color:#991b1b; }
+    .route-map { width: 100%; height: 360px; border-radius: 12px; border: 1px solid #eadff8; }
     @media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
@@ -95,6 +96,13 @@
         <div class="detail-item"><h4>Actual Distance</h4><p>{{ trip.actual_distance_km|default:"-" }} km</p></div>
     </div>
 </div>
+
+{% if show_map and maps_key %}
+<div class="panel">
+    <h3>Best Route</h3>
+    <div id="route-map" class="route-map"></div>
+</div>
+{% endif %}
 
 <div class="panel">
     <h3>Delivery Items</h3>
@@ -198,4 +206,64 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+{% if show_map and maps_key %}
+<script>
+function initTripMap() {
+    const mapEl = document.getElementById("route-map");
+    if (!mapEl) return;
+
+    const originPlaceId = "{{ trip.planned_origin_place_id|default:'' }}";
+    const destPlaceId = "{{ trip.planned_destination_place_id|default:'' }}";
+    const originLat = {{ trip.planned_origin_lat|default_if_none:"null" }};
+    const originLng = {{ trip.planned_origin_lng|default_if_none:"null" }};
+    const destLat = {{ trip.planned_destination_lat|default_if_none:"null" }};
+    const destLng = {{ trip.planned_destination_lng|default_if_none:"null" }};
+
+    let origin;
+    let destination;
+
+    if (originPlaceId) {
+        origin = { placeId: originPlaceId };
+    } else if (originLat !== null && originLng !== null) {
+        origin = { lat: originLat, lng: originLng };
+    } else {
+        origin = "{{ trip.planned_origin|default:trip.origin|escapejs }}";
+    }
+
+    if (destPlaceId) {
+        destination = { placeId: destPlaceId };
+    } else if (destLat !== null && destLng !== null) {
+        destination = { lat: destLat, lng: destLng };
+    } else {
+        destination = "{{ trip.planned_destination|default:trip.destination|escapejs }}";
+    }
+
+    const map = new google.maps.Map(mapEl, {
+        zoom: 10,
+        center: { lat: 10.3529, lng: 76.5125 },
+        mapTypeControl: false,
+        streetViewControl: false,
+    });
+
+    const directionsService = new google.maps.DirectionsService();
+    const directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
+
+    directionsService.route(
+        {
+            origin: origin,
+            destination: destination,
+            travelMode: google.maps.TravelMode.DRIVING,
+        },
+        function (result, status) {
+            if (status === "OK") {
+                directionsRenderer.setDirections(result);
+            } else {
+                console.warn("Directions request failed:", status);
+            }
+        }
+    );
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ maps_key }}&callback=initTripMap" async defer></script>
+{% endif %}
 {% endblock %}
