@@ -1,0 +1,53 @@
+{% extends "base_admin.html" %}
+{% block title %}Driver Profile{% endblock %}
+{% block extra_styles %}
+<style>
+    .profile-card {
+        background: #fff;
+        border: 1px solid #eadff8;
+        border-radius: 12px;
+        padding: 16px;
+        max-width: 720px;
+        box-shadow: 0 6px 18px rgba(111, 66, 193, 0.08);
+    }
+    .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px 16px;
+    }
+    .profile-grid p { margin: 0; }
+    .muted { color: #6b7280; font-size: .9rem; }
+    .status-ok { color: #166534; font-weight: 700; }
+    .status-warn { color: #9a3412; font-weight: 700; }
+</style>
+{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div>
+        <h2>Driver Profile</h2>
+        <p class="muted">User: {{ driver.user.username }}</p>
+    </div>
+    <a class="btn secondary" href="{% url 'driver_list_adm' %}">Back</a>
+</div>
+<div class="profile-card">
+    <p>
+        Profile Status:
+        {% if driver.license_number and driver.license_expiry_date and driver.phone_number and driver.years_of_experience and driver.emergency_contact_name and driver.emergency_contact_phone %}
+            <span class="status-ok">Complete</span>
+        {% else %}
+            <span class="status-warn">Incomplete</span>
+        {% endif %}
+    </p>
+    <div class="profile-grid" style="margin-top:8px;">
+        <p><strong>First Name:</strong> {{ driver.user.first_name|default:"-" }}</p>
+        <p><strong>Last Name:</strong> {{ driver.user.last_name|default:"-" }}</p>
+        <p><strong>License Number:</strong> {{ driver.license_number|default:"-" }}</p>
+        <p><strong>License Expiry Date:</strong> {{ driver.license_expiry_date|date:"d-m-Y"|default:"-" }}</p>
+        <p><strong>Phone Number:</strong> {{ driver.phone_number|default:"-" }}</p>
+        <p><strong>Address:</strong> {{ driver.address|default:"-" }}</p>
+        <p><strong>Years of Experience:</strong> {{ driver.years_of_experience|default:"-" }}</p>
+        <p><strong>Emergency Contact Name:</strong> {{ driver.emergency_contact_name|default:"-" }}</p>
+        <p><strong>Emergency Contact Phone:</strong> {{ driver.emergency_contact_phone|default:"-" }}</p>
+    </div>
+</div>
+{% endblock %}

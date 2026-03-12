@@ -4,26 +4,87 @@
 {% block extra_styles %}
 <style>
     .hero-detail { background-image: url('{% static "images/fleet7.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
-    .detail-card { background: rgba(255,255,255,.96); border:1px solid #eadff8; border-radius:12px; padding:12px; margin-bottom:12px; }
-    .detail-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px 16px; }
-    .detail-item h4 { font-size:.75rem; color:#7a6a96; text-transform:uppercase; margin-bottom:3px; }
-    .detail-item p { font-weight:700; }
+    .detail-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%);
+        border: 1px solid #e7d8fb;
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 8px 20px rgba(111, 66, 193, 0.12);
+        position: relative;
+        overflow: hidden;
+    }
+    .detail-card::after {
+        content: "";
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 140px;
+        height: 140px;
+        background: radial-gradient(circle, rgba(155, 89, 182, 0.18), transparent 65%);
+        pointer-events: none;
+    }
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px 14px;
+    }
+    .detail-item {
+        background: #ffffff;
+        border: 1px solid #eadff8;
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 4px 10px rgba(111, 66, 193, 0.08);
+    }
+    .detail-item h4 {
+        font-size: .7rem;
+        color: #6f42c1;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        margin-bottom: 4px;
+        font-weight: 700;
+    }
+    .detail-item p { font-weight: 800; color: #1f2937; }
     .panel { background: rgba(255,255,255,.96); border:1px solid #eadff8; border-radius:12px; padding:12px; margin-bottom:12px; }
+    .print-actions { display:flex; gap:8px; margin-bottom:12px; }
+    @media print {
+        @page { margin: 12mm; }
+        body { font-family: Verdana, sans-serif; font-size: 12pt; }
+        body * { visibility: hidden; }
+        .print-area, .print-area * { visibility: visible; }
+        .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #111; padding: 6px; font-size: 12pt; }
+        th { background: #f3f4f6; color: #111; }
+    }
+    .summary-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:10px 14px; }
+    .summary-item { background:#fff; border:1px solid #eadff8; border-radius:12px; padding:10px; box-shadow:0 4px 10px rgba(111,66,193,0.08); }
+    .summary-item h4 { font-size:.7rem; color:#6f42c1; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; font-weight:700; }
+    .summary-item p { font-weight:800; color:#1f2937; }
     .status-pill { display:inline-block; padding:4px 10px; border-radius:999px; font-size:.78rem; font-weight:700; background:#ede9fe; color:#5b21b6; }
+    .status-pill.in-progress { background:#dbeafe; color:#1e40af; }
+    .status-pill.pending { background:#fef3c7; color:#92400e; }
+    .status-pill.completed { background:#dcfce7; color:#166534; }
+    .status-pill.rejected { background:#fee2e2; color:#991b1b; }
     @media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 {% block content %}
 <section class="hero hero-detail">
     <div>
-        <h2>Trip #{{ trip.id }}</h2>
+        <h2>Trip {{ trip.id }}</h2>
         <p>Planned Route: {{ trip.planned_origin|default:trip.origin }} to {{ trip.planned_destination|default:trip.destination }}</p>
     </div>
 </section>
 
+<div class="print-actions">
+    <button class="btn warning" type="button" onclick="window.print()">Print Trip Report</button>
+</div>
+
+<div class="print-area">
 <div class="detail-card">
     <div class="detail-grid">
-        <div class="detail-item"><h4>Status</h4><p><span class="status-pill">{{ trip.get_status_display }}</span></p></div>
+        <div class="detail-item"><h4>Status</h4><p><span class="status-pill {{ trip.status|default:''|slugify }}">{{ trip.get_status_display }}</span></p></div>
         <div class="detail-item"><h4>Vehicle</h4><p>{{ trip.vehicle.plate_number }}</p></div>
         <div class="detail-item"><h4>Load</h4><p>{{ trip.load_details|default:"-" }}</p></div>
         <div class="detail-item"><h4>Distance</h4><p>{{ trip.estimated_distance_km|default:"-" }} km</p></div>
@@ -63,6 +124,8 @@
     </table>
 </div>
 
+{% if show_actions|default:True %}
+
 {% if trip.status == 'pending' %}
 <div class="panel">
 <form method="post" style="display:inline-block;" id="accept-trip-form">
@@ -89,19 +152,23 @@
 {% elif trip.status == 'completed' %}
 <div class="panel">
 <h3>Trip Summary</h3>
-<p><strong>Completed At:</strong> {{ trip.completed_at }}</p>
 {% if trip.completion %}
-<p><strong>Actual Delivery Time:</strong> {{ trip.completion.actual_delivery_time }}</p>
-<p><strong>Odometer:</strong> {{ trip.completion.odometer_reading }}</p>
-<p><strong>Engine Temp:</strong> {{ trip.completion.engine_temp }}</p>
-<p><strong>Oil Quality:</strong> {{ trip.completion.oil_quality }}</p>
-<p><strong>Brake Condition:</strong> {{ trip.completion.brake_condition }}</p>
-<p><strong>Weather:</strong> {{ trip.completion.weather }}</p>
-<p><strong>Road Condition:</strong> {{ trip.completion.road_condition }}</p>
+<div class="summary-grid">
+    <div class="summary-item"><h4>Completed At</h4><p>{{ trip.completed_at }}</p></div>
+    <div class="summary-item"><h4>Actual Delivery Time</h4><p>{{ trip.completion.actual_delivery_time|default:"-" }}</p></div>
+    <div class="summary-item"><h4>Odometer</h4><p>{{ trip.completion.odometer_reading|default:"-" }}</p></div>
+    <div class="summary-item"><h4>Engine Temp</h4><p>{{ trip.completion.engine_temp|default:"-" }}</p></div>
+    <div class="summary-item"><h4>Oil Quality</h4><p>{{ trip.completion.oil_quality|default:"-" }}</p></div>
+    <div class="summary-item"><h4>Brake Condition</h4><p>{{ trip.completion.brake_condition|default:"-" }}</p></div>
+    <div class="summary-item"><h4>Weather</h4><p>{{ trip.completion.weather|default:"-" }}</p></div>
+    <div class="summary-item"><h4>Road Condition</h4><p>{{ trip.completion.road_condition|default:"-" }}</p></div>
+</div>
 {% endif %}
 </div>
 {% endif %}
 
+{% endif %}
+</div>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const acceptForm = document.getElementById("accept-trip-form");

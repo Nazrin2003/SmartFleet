@@ -30,22 +30,24 @@
     {% endif %}
 </form>
 <table>
-    <thead><tr><th>Username</th><th>License</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+    <thead><tr><th>Username</th><th>License</th><th>Phone</th><th>Profile</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>
     {% for item in drivers %}
     <tr>
         <td>{{ item.user.username }}</td>
         <td>{{ item.license_number|default:'-' }}</td>
         <td>{{ item.phone_number|default:'-' }}</td>
+        <td>{% if item.profile_complete %}Complete{% else %}Incomplete{% endif %}</td>
         <td>{% if item.user.is_active %}Active{% else %}Blocked{% endif %}</td>
         <td class="actions-cell">
             <a class="action-btn action-edit" href="{% url 'edit_driver_adm' item.id %}">Edit</a>
+            <a class="action-btn action-edit" href="{% url 'driver_profile_adm' item.id %}">Profile</a>
             <a class="action-btn action-toggle" href="{% url 'toggle_driver_adm' item.id %}">{% if item.user.is_active %}Block{% else %}Unblock{% endif %}</a>
             <a class="action-btn action-delete" href="{% url 'delete_driver_adm' item.id %}" onclick="return confirm('Delete driver?')">Delete</a>
         </td>
     </tr>
     {% empty %}
-    <tr><td colspan="5">No drivers found.</td></tr>
+    <tr><td colspan="6">No drivers found.</td></tr>
     {% endfor %}
     </tbody>
 </table>

@@ -124,6 +124,22 @@ def _format_location(address, lat, lng):
     return "-"
 
 
+def _is_profile_complete(driver):
+    required_fields = [
+        "license_number",
+        "license_expiry_date",
+        "phone_number",
+        "years_of_experience",
+        "emergency_contact_name",
+        "emergency_contact_phone",
+    ]
+    for field in required_fields:
+        value = getattr(driver, field, None)
+        if value in (None, ""):
+            return False
+    return True
+
+
 PAY_RATE_PER_KM = 12.0
 BASE_TRIP_PAY = 0.0
 
@@ -301,6 +317,8 @@ def driver_list_adm(request):
             Q(phone_number__icontains=q)
         )
     drivers = drivers.order_by('user__username')
+    for item in drivers:
+        item.profile_complete = _is_profile_complete(item)
     return render(request, 'driver_list_adm.html', {'reg': reg, 'drivers': drivers, 'q': q})
 
 
@@ -312,21 +330,11 @@ def add_driver_adm(request):
     if request.method == 'POST':
         username = (request.POST.get('username') or '').strip()
         password = request.POST.get('password')
-        license_number = (request.POST.get('license_number') or '').strip() or None
-        license_expiry_date = (request.POST.get('license_expiry_date') or '').strip() or None
-        phone_number = (request.POST.get('phone_number') or '').strip() or None
-        address = (request.POST.get('address') or '').strip() or None
-        years_of_experience = _to_int(request.POST.get('years_of_experience'))
-        emergency_contact_name = (request.POST.get('emergency_contact_name') or '').strip() or None
-        emergency_contact_phone = (request.POST.get('emergency_contact_phone') or '').strip() or None
         if not username or not password:
             messages.error(request, 'Username and password are required.')
             return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'add'})
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Username already exists.')
-            return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'add'})
-        if license_number and Driver.objects.filter(license_number=license_number).exists():
-            messages.error(request, 'License number already exists.')
             return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'add'})
 
         user = User.objects.create_user(
@@ -337,16 +345,7 @@ def add_driver_adm(request):
             is_active=True,
         )
         Registration.objects.create(user=user, user_role='driver')
-        Driver.objects.create(
-            user=user,
-            license_number=license_number,
-            license_expiry_date=license_expiry_date,
-            phone_number=phone_number,
-            address=address,
-            years_of_experience=years_of_experience,
-            emergency_contact_name=emergency_contact_name,
-            emergency_contact_phone=emergency_contact_phone,
-        )
+        Driver.objects.create(user=user)
         messages.success(request, 'Driver created successfully.')
         return redirect('driver_list_adm')
     return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'add'})
@@ -360,21 +359,11 @@ def edit_driver_adm(request, driver_id):
     driver = get_object_or_404(Driver.objects.select_related('user'), id=driver_id)
     if request.method == 'POST':
         username = (request.POST.get('username') or '').strip()
-        license_number = (request.POST.get('license_number') or '').strip() or None
-        license_expiry_date = (request.POST.get('license_expiry_date') or '').strip() or None
-        phone_number = (request.POST.get('phone_number') or '').strip() or None
-        address = (request.POST.get('address') or '').strip() or None
-        years_of_experience = _to_int(request.POST.get('years_of_experience'))
-        emergency_contact_name = (request.POST.get('emergency_contact_name') or '').strip() or None
-        emergency_contact_phone = (request.POST.get('emergency_contact_phone') or '').strip() or None
         if not username:
             messages.error(request, 'Username is required.')
             return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'edit', 'driver_obj': driver})
         if User.objects.filter(username=username).exclude(id=driver.user_id).exists():
             messages.error(request, 'Username already exists.')
-            return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'edit', 'driver_obj': driver})
-        if license_number and Driver.objects.filter(license_number=license_number).exclude(id=driver.id).exists():
-            messages.error(request, 'License number already exists.')
             return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'edit', 'driver_obj': driver})
 
         user = driver.user
@@ -385,15 +374,6 @@ def edit_driver_adm(request, driver_id):
         if new_password:
             user.set_password(new_password)
         user.save()
-
-        driver.license_number = license_number
-        driver.license_expiry_date = license_expiry_date
-        driver.phone_number = phone_number
-        driver.address = address
-        driver.years_of_experience = years_of_experience
-        driver.emergency_contact_name = emergency_contact_name
-        driver.emergency_contact_phone = emergency_contact_phone
-        driver.save()
         messages.success(request, 'Driver updated.')
         return redirect('driver_list_adm')
     return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'edit', 'driver_obj': driver})
@@ -944,6 +924,12 @@ def assign_vehicle(request, driver_id):
     if not driver:
         messages.error(request, "Driver not found.")
         return redirect("drivers_page")
+    if not _is_profile_complete(driver):
+        messages.error(
+            request,
+            "Driver profile is incomplete. Ask the driver to complete their profile before assignment.",
+        )
+        return redirect("driver_detail", driver_id=driver.id)
 
     if request.method == "POST":
         vehicle_id = request.POST.get("vehicle_id")
@@ -1026,10 +1012,75 @@ def driver_home(request):
             'assigned_vehicle': driver.assigned_vehicle,
             'active_trips': active_trips,
             'completed_trips': completed_trips,
+            'profile_complete': _is_profile_complete(driver),
             'notifications': notifications[:5],
             'notifications_count': notifications.count(),
         },
     )
+
+
+@login_required(login_url='login')
+@role_required('driver')
+def driver_profile(request):
+    reg_id = request.session.get('reg_id')
+    reg = Registration.objects.filter(id=reg_id).first()
+    driver, _ = Driver.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        license_number = (request.POST.get("license_number") or "").strip() or None
+        license_expiry_date = (request.POST.get("license_expiry_date") or "").strip() or None
+        phone_number = (request.POST.get("phone_number") or "").strip() or None
+        address = (request.POST.get("address") or "").strip() or None
+        years_of_experience = _to_int(request.POST.get("years_of_experience"))
+        emergency_contact_name = (request.POST.get("emergency_contact_name") or "").strip() or None
+        emergency_contact_phone = (request.POST.get("emergency_contact_phone") or "").strip() or None
+
+        if (
+            not license_number
+            or not license_expiry_date
+            or not phone_number
+            or years_of_experience is None
+            or not emergency_contact_name
+            or not emergency_contact_phone
+        ):
+            messages.error(request, "Please complete all required fields.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
+        if Driver.objects.filter(license_number=license_number).exclude(id=driver.id).exists():
+            messages.error(request, "License number already exists.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
+
+        driver.license_number = license_number
+        driver.license_expiry_date = license_expiry_date
+        driver.phone_number = phone_number
+        driver.address = address
+        driver.years_of_experience = years_of_experience
+        driver.emergency_contact_name = emergency_contact_name
+        driver.emergency_contact_phone = emergency_contact_phone
+        driver.save()
+        messages.success(request, "Profile updated.")
+
+    return render(
+        request,
+        "driver_profile.html",
+        {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+    )
+
+
+@login_required(login_url='login')
+@role_required('admin')
+def driver_profile_adm(request, driver_id):
+    reg_id = request.session.get('reg_id')
+    reg = Registration.objects.filter(id=reg_id).first()
+    driver = get_object_or_404(Driver.objects.select_related("user"), id=driver_id)
+    return render(request, "driver_profile_adm.html", {"reg": reg, "driver": driver})
 
 
 @login_required(login_url='login')
@@ -1099,7 +1150,31 @@ def trip_detail(request, trip_id):
         if action == "complete" and trip.status == Trip.STATUS_IN_PROGRESS:
             return redirect("trip_complete_form", trip_id=trip.id)
 
-    return render(request, "trip_detail.html", {"reg": reg, "trip": trip})
+    return render(request, "trip_detail.html", {"reg": reg, "trip": trip, "show_actions": True})
+
+
+@login_required(login_url='login')
+@role_required('manager')
+def trip_detail_manager(request, trip_id):
+    reg_id = request.session.get('reg_id')
+    reg = Registration.objects.filter(id=reg_id).first()
+    trip = Trip.objects.select_related("vehicle", "driver", "driver__user").filter(id=trip_id).first()
+    if not trip:
+        messages.error(request, "Trip not found.")
+        return redirect("trips_page")
+    return render(request, "trip_detail.html", {"reg": reg, "trip": trip, "show_actions": False})
+
+
+@login_required(login_url='login')
+@role_required('admin')
+def trip_detail_admin(request, trip_id):
+    reg_id = request.session.get('reg_id')
+    reg = Registration.objects.filter(id=reg_id).first()
+    trip = Trip.objects.select_related("vehicle", "driver", "driver__user").filter(id=trip_id).first()
+    if not trip:
+        messages.error(request, "Trip not found.")
+        return redirect("trips_admin")
+    return render(request, "trip_detail.html", {"reg": reg, "trip": trip, "show_actions": False})
 
 
 @login_required(login_url='login')

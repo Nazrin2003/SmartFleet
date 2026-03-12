@@ -144,6 +144,27 @@
     .stat-card.incomplete {
         border-color: #EF4444;
     }
+    .profile-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .profile-pill.complete {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        color: #166534;
+        border: 1px solid #86efac;
+    }
+    .profile-pill.incomplete {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+    }
 
     /* Action Buttons */
     .actions-grid {
@@ -446,6 +467,17 @@
         <div class="stat-card">
             <h3>Notifications</h3>
             <p>{{ notifications_count }}</p>
+        </div>
+
+        <div class="stat-card {% if profile_complete %}complete{% else %}incomplete{% endif %}">
+            <h3>Profile Status</h3>
+            <p>
+                {% if profile_complete %}
+                    <span class="profile-pill complete">Complete</span>
+                {% else %}
+                    <span class="profile-pill incomplete">Incomplete</span>
+                {% endif %}
+            </p>
         </div>
 </div>
 

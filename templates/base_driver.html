@@ -206,6 +206,7 @@
             <a href="{% url 'driver_trips' %}" class="{% if request.resolver_match.url_name == 'driver_trips' %}active{% endif %}">My Trips</a>
             <a href="{% url 'driver_completed_trips' %}" class="{% if request.resolver_match.url_name == 'driver_completed_trips' %}active{% endif %}">My Reports</a>
             <a href="{% url 'driver_payments' %}" class="{% if request.resolver_match.url_name == 'driver_payments' %}active{% endif %}">Payments</a>
+            <a href="{% url 'driver_profile' %}" class="{% if request.resolver_match.url_name == 'driver_profile' %}active{% endif %}">My Profile</a>
             <a href="{% url 'change_password' %}" class="{% if request.resolver_match.url_name == 'change_password' %}active{% endif %}">Change Password</a>
         </aside>
         <main class="main">

@@ -7,25 +7,29 @@
     .filter-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:8px; align-items:end; }
     .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; margin-bottom:10px; }
     .badge { padding: 3px 8px; border-radius:999px; background:#dcfce7; color:#166534; font-size:.74rem; font-weight:700; }
-    .print-title { display: none; }
+        .print-title { display: none; }
     @media print {
-        @page { margin: 12mm; }
-        body { font-family: Verdana, sans-serif; font-size: 12pt; }
+        @page { margin: 12mm; size: A4; }
+        html, body { font-family: Verdana, sans-serif !important; font-size: 12pt !important; color: #111 !important; }
         body * { visibility: hidden; }
+        .top, .sidebar, .hero, .filters, .actions { display: none !important; }
         .print-area, .print-area * { visibility: visible; }
-        .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        .print-area { position: absolute; left: 0; top: 0; width: 100%; background: #fff; }
         .print-title { display: block; margin-bottom: 8px; font-weight: 700; font-size: 14pt; }
         table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #111; padding: 6px; font-size: 12pt; }
+        th, td { border: 1px solid #111; padding: 6px; font-size: 12pt !important; font-family: Verdana, sans-serif !important; }
         th { background: #f3f4f6; color: #111; }
         .badge { background: none; color: #111; padding: 0; border-radius: 0; font-weight: 600; }
+        * { box-shadow: none !important; background: transparent !important; }
         /* Hide Planned Origin, Planned Destination, and Status in print */
         .print-area th:nth-child(3),
         .print-area td:nth-child(3),
         .print-area th:nth-child(4),
         .print-area td:nth-child(4),
         .print-area th:nth-child(10),
-        .print-area td:nth-child(10) { display: none; }
+        .print-area td:nth-child(10),
+        .print-area th:nth-child(11),
+        .print-area td:nth-child(11) { display: none; }
     }
 </style>
 {% endblock %}
@@ -55,7 +59,7 @@
 <div class="panel print-area">
 <div class="print-title">My Completed Trips Report</div>
 <table>
-    <thead><tr><th>Trip ID</th><th>Vehicle</th><th>Planned Origin</th><th>Planned Destination</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Date</th><th>Delivery Time</th><th>Status</th></tr></thead>
+    <thead><tr><th>Trip ID</th><th>Vehicle</th><th>Planned Origin</th><th>Planned Destination</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Date</th><th>Delivery Time</th><th>Status</th><th>Action</th></tr></thead>
     <tbody>
     {% for trip in trips %}
     <tr>
@@ -69,11 +73,13 @@
         <td>{{ trip.completed_at }}</td>
         <td>{% if trip.completion %}{{ trip.completion.actual_delivery_time }}{% endif %}</td>
         <td><span class="badge">{{ trip.get_status_display }}</span></td>
+        <td><a class="btn info" href="{% url 'trip_detail' trip.id %}">View</a></td>
     </tr>
     {% empty %}
-    <tr><td colspan="10">No completed trips.</td></tr>
+    <tr><td colspan="11">No completed trips.</td></tr>
     {% endfor %}
     </tbody>
 </table>
 </div>
 {% endblock %}
+

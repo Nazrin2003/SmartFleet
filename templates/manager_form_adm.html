@@ -1,16 +1,53 @@
 {% extends "base_admin.html" %}
+{% load static %}
 {% block title %}{% if mode == 'edit' %}Edit Manager{% else %}Add Manager{% endif %}{% endblock %}
+{% block extra_styles %}
+<style>
+    .form-shell {
+        display: block;
+        gap: 0;
+        max-width: 450px;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #eadff8;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(111, 66, 193, 0.12);
+    }
+    .form-pane {
+        padding: 16px;
+    }
+    .form-pane h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.25rem;
+        margin-bottom: 10px;
+    }
+    .form-grid {
+        display: grid;
+        gap: 10px;
+    }
+    @media (max-width: 900px) {
+        .form-shell { max-width: 100%; }
+    }
+</style>
+{% endblock %}
 {% block content %}
-<h2 style="margin-bottom:10px;">{% if mode == 'edit' %}Edit Manager{% else %}Add Manager{% endif %}</h2>
-<form method="post" style="display:grid;gap:10px;max-width:440px;">
-    {% csrf_token %}
-    <div><label>Username</label><br><input type="text" name="username" required value="{{ manager.user.username|default:'' }}"></div>
-    <div><label>First Name</label><br><input type="text" name="first_name" value="{{ manager.user.first_name|default:'' }}"></div>
-    <div><label>Last Name</label><br><input type="text" name="last_name" value="{{ manager.user.last_name|default:'' }}"></div>
-    <div><label>Password {% if mode == 'edit' %}(leave blank to keep){% endif %}</label><br><input type="password" name="password" {% if mode != 'edit' %}required{% endif %}></div>
-    <div>
-        <button class="btn success" type="submit">Save</button>
-        <a class="btn secondary" href="{% url 'manager_list_adm' %}">Cancel</a>
+<div style="display:flex;justify-content:center;width:100%;">
+<div class="form-shell">
+    <div class="form-pane">
+        <h2>{% if mode == 'edit' %}Edit Manager{% else %}Add Manager{% endif %}</h2>
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+            <div><label>Username</label><br><input type="text" name="username" required value="{{ manager.user.username|default:'' }}"></div>
+            <div><label>First Name</label><br><input type="text" name="first_name" value="{{ manager.user.first_name|default:'' }}"></div>
+            <div><label>Last Name</label><br><input type="text" name="last_name" value="{{ manager.user.last_name|default:'' }}"></div>
+            <div><label>Password {% if mode == 'edit' %}(leave blank to keep){% endif %}</label><br><input type="password" name="password" {% if mode != 'edit' %}required{% endif %}></div>
+            <div>
+                <button class="btn success" type="submit">Save</button>
+                <a class="btn secondary" href="{% url 'manager_list_adm' %}">Cancel</a>
+            </div>
+        </form>
     </div>
-</form>
+</div>
+</div>
 {% endblock %}
