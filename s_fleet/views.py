@@ -7,9 +7,14 @@ from django.db import transaction
 from django.db.models import Q, Prefetch
 from django.http import HttpResponse
 from django.utils import timezone
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 import csv
 import json
 import math
+import base64
+import hmac
+import hashlib
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from .models import (
@@ -122,6 +127,40 @@ def _format_location(address, lat, lng):
     if lat is not None and lng is not None:
         return f"{lat}, {lng}"
     return "-"
+
+
+def _razorpay_create_order(amount_paise, receipt):
+    key_id = settings.RAZORPAY_KEY_ID
+    key_secret = settings.RAZORPAY_KEY_SECRET
+    if not key_id or not key_secret:
+        return None, "Razorpay keys are not configured."
+
+    payload = json.dumps(
+        {
+            "amount": int(amount_paise),
+            "currency": "INR",
+            "receipt": receipt,
+            "payment_capture": 1,
+        }
+    ).encode("utf-8")
+
+    auth = base64.b64encode(f"{key_id}:{key_secret}".encode("utf-8")).decode("utf-8")
+    req = Request("https://api.razorpay.com/v1/orders", data=payload, method="POST")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Authorization", f"Basic {auth}")
+    try:
+        with urlopen(req, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        return data, None
+    except Exception as exc:
+        return None, f"Razorpay order creation failed: {exc}"
+
+
+def _razorpay_verify_signature(order_id, payment_id, signature):
+    key_secret = settings.RAZORPAY_KEY_SECRET or ""
+    payload = f"{order_id}|{payment_id}".encode("utf-8")
+    expected = hmac.new(key_secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature or "")
 
 
 def _is_profile_complete(driver):
@@ -1434,6 +1473,134 @@ def pay_driver(request, payment_id):
     payment.paid_at = timezone.now()
     payment.save(update_fields=["status", "approved_by", "approved_at", "paid_at"])
     messages.success(request, "Payment marked as paid.")
+    return redirect("manager_payments")
+
+
+@login_required(login_url="login")
+@role_required("manager")
+def pay_driver_razorpay(request, payment_id):
+    payment = TripPayment.objects.select_related("trip", "driver", "driver__user").filter(id=payment_id).first()
+    if not payment:
+        messages.error(request, "Payment not found.")
+        return redirect("manager_payments")
+    if payment.status == TripPayment.STATUS_PAID:
+        messages.info(request, "Payment already marked as paid.")
+        return redirect("manager_payments")
+
+    amount = float(payment.total_amount or 0.0)
+    if amount <= 0:
+        messages.error(request, "Payment amount must be greater than zero.")
+        return redirect("manager_payments")
+
+    order_data, error = _razorpay_create_order(
+        amount_paise=int(amount * 100),
+        receipt=f"trip-{payment.trip_id}-payment-{payment.id}",
+    )
+    if error:
+        messages.error(request, error)
+        return redirect("manager_payments")
+
+    payment.payment_gateway = "razorpay"
+    payment.gateway_order_id = order_data.get("id")
+    if payment.status == TripPayment.STATUS_PENDING:
+        payment.status = TripPayment.STATUS_APPROVED
+        payment.approved_by = request.user
+        payment.approved_at = timezone.now()
+    payment.save(update_fields=["payment_gateway", "gateway_order_id", "status", "approved_by", "approved_at"])
+
+    context = {
+        "reg": Registration.objects.filter(id=request.session.get("reg_id")).first(),
+        "payment": payment,
+        "razorpay_key": settings.RAZORPAY_KEY_ID,
+        "order_id": order_data.get("id"),
+        "amount": order_data.get("amount"),
+        "currency": order_data.get("currency"),
+        "callback_url": request.build_absolute_uri("/manager/payments/razorpay/callback/"),
+    }
+    return render(request, "razorpay_checkout.html", context)
+
+
+@login_required(login_url="login")
+@role_required("manager")
+def pay_driver_dummy(request, payment_id):
+    payment = TripPayment.objects.select_related("trip", "driver", "driver__user").filter(id=payment_id).first()
+    if not payment:
+        messages.error(request, "Payment not found.")
+        return redirect("manager_payments")
+    if payment.status == TripPayment.STATUS_PAID:
+        messages.info(request, "Payment already marked as paid.")
+        return redirect("manager_payments")
+
+    if request.method == "POST":
+        payment.payment_gateway = "dummy"
+        payment.status = TripPayment.STATUS_PAID
+        if payment.approved_by is None:
+            payment.approved_by = request.user
+            payment.approved_at = timezone.now()
+        payment.paid_at = timezone.now()
+        payment.save(
+            update_fields=[
+                "payment_gateway",
+                "status",
+                "approved_by",
+                "approved_at",
+                "paid_at",
+            ]
+        )
+        messages.success(request, "Payment processed.")
+        return redirect("manager_payments")
+
+    context = {
+        "reg": Registration.objects.filter(id=request.session.get("reg_id")).first(),
+        "payment": payment,
+    }
+    return render(request, "dummy_payment.html", context)
+
+
+@csrf_exempt
+@login_required(login_url="login")
+@role_required("manager")
+def razorpay_callback(request):
+    if request.method != "POST":
+        messages.error(request, "Invalid payment callback.")
+        return redirect("manager_payments")
+
+    order_id = request.POST.get("razorpay_order_id")
+    payment_id = request.POST.get("razorpay_payment_id")
+    signature = request.POST.get("razorpay_signature")
+
+    if not order_id or not payment_id or not signature:
+        messages.error(request, "Payment confirmation incomplete.")
+        return redirect("manager_payments")
+
+    payment = TripPayment.objects.filter(gateway_order_id=order_id).first()
+    if not payment:
+        messages.error(request, "Payment record not found.")
+        return redirect("manager_payments")
+
+    if not _razorpay_verify_signature(order_id, payment_id, signature):
+        messages.error(request, "Payment signature verification failed.")
+        return redirect("manager_payments")
+
+    payment.gateway_payment_id = payment_id
+    payment.gateway_signature = signature
+    payment.status = TripPayment.STATUS_PAID
+    if payment.approved_by is None:
+        payment.approved_by = request.user
+        payment.approved_at = timezone.now()
+    payment.paid_at = timezone.now()
+    payment.save(
+        update_fields=[
+            "gateway_payment_id",
+            "gateway_signature",
+            "status",
+            "approved_by",
+            "approved_at",
+            "paid_at",
+        ]
+    )
+
+    messages.success(request, "Payment successful via Razorpay.")
     return redirect("manager_payments")
 
 

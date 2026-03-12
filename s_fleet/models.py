@@ -191,6 +191,10 @@ class TripPayment(models.Model):
     )
     approved_at = models.DateTimeField(blank=True, null=True)
     paid_at = models.DateTimeField(blank=True, null=True)
+    payment_gateway = models.CharField(max_length=50, blank=True, null=True)
+    gateway_order_id = models.CharField(max_length=120, blank=True, null=True)
+    gateway_payment_id = models.CharField(max_length=120, blank=True, null=True)
+    gateway_signature = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

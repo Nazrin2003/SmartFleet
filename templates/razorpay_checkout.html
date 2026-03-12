@@ -1,0 +1,49 @@
+{% extends "base_manager.html" %}
+{% block title %}Razorpay Checkout{% endblock %}
+{% block extra_styles %}
+<style>
+    .checkout-card {
+        background: #fff;
+        border: 1px solid #eadff8;
+        border-radius: 12px;
+        padding: 16px;
+        max-width: 640px;
+        box-shadow: 0 6px 18px rgba(111, 66, 193, 0.08);
+    }
+    .muted { color: #6b7280; font-size: .9rem; }
+    .amount { font-size: 1.4rem; font-weight: 800; color: #1f2937; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="checkout-card">
+    <h2>Razorpay Sandbox Checkout</h2>
+    <p class="muted">This uses Razorpay test mode. No real money is transferred.</p>
+    <p><strong>Trip:</strong> #{{ payment.trip.id }}</p>
+    <p><strong>Driver:</strong> {{ payment.driver.user.username }}</p>
+    <p class="amount">Amount: ₹{{ payment.total_amount|floatformat:2 }}</p>
+    <button id="rzp-button" class="btn success">Pay with Razorpay</button>
+    <a class="btn secondary" href="{% url 'manager_payments' %}" style="margin-left:6px;">Cancel</a>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    const options = {
+        key: "{{ razorpay_key }}",
+        amount: "{{ amount }}",
+        currency: "{{ currency }}",
+        name: "SMARTFLEET",
+        description: "Trip Payment #{{ payment.trip.id }}",
+        order_id: "{{ order_id }}",
+        callback_url: "{{ callback_url }}",
+        prefill: {
+            name: "{{ payment.driver.user.username }}",
+        },
+        theme: { color: "#6f42c1" }
+    };
+    const rzp = new Razorpay(options);
+    document.getElementById("rzp-button").onclick = function(e) {
+        rzp.open();
+        e.preventDefault();
+    };
+</script>
+{% endblock %}

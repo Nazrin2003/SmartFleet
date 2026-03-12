@@ -11,6 +11,61 @@
     .badge.approved { background:#dbeafe; color:#1e40af; }
     .badge.paid { background:#dcfce7; color:#166534; }
     .badge.rejected { background:#fee2e2; color:#991b1b; }
+    .pay-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 16px;
+    }
+    .pay-modal.show { display: flex; }
+    .pay-card {
+        background: #fff;
+        width: min(720px, 100%);
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 30px 60px rgba(15, 23, 42, 0.2);
+        overflow: hidden;
+    }
+    .pay-header {
+        padding: 14px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #1b1f3b 0%, #3f2b96 100%);
+        color: #fff;
+    }
+    .pay-header h3 { margin: 0; font-size: 1.05rem; }
+    .pay-header small { opacity: 0.9; }
+    .pay-body { padding: 16px 18px; }
+    .pay-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 14px; }
+    .pay-field label { font-size: 0.8rem; font-weight: 700; color: #374151; }
+    .pay-field input {
+        width: 100%;
+        padding: 9px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        margin-top: 4px;
+        font: inherit;
+    }
+    .pay-amount {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 8px 0 2px;
+    }
+    .pay-meta { color: #6b7280; font-size: 0.9rem; }
+    .pay-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .pay-close {
+        background: transparent;
+        color: #fff;
+        border: 0;
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
 </style>
 {% endblock %}
 {% block content %}
@@ -40,6 +95,7 @@
         <tr>
             <th>Trip ID</th>
             <th>Driver</th>
+            <th>Gateway</th>
             <th>Base Pay</th>
             <th>Expenses</th>
             <th>Total</th>
@@ -54,6 +110,7 @@
         <tr>
             <td>{{ payment.trip.id }}</td>
             <td>{{ payment.driver.user.username }}</td>
+            <td>{{ payment.payment_gateway|default:"-" }}</td>
             <td>{{ payment.base_amount|floatformat:2 }}</td>
             <td>{{ payment.expense_total|floatformat:2 }}</td>
             <td>{{ payment.total_amount|floatformat:2 }}</td>
@@ -63,16 +120,90 @@
             <td>
                 {% if payment.status != 'paid' %}
                     <a class="btn warning" href="{% url 'approve_payment' payment.id %}">Approve</a>
-                    <a class="btn success" href="{% url 'pay_driver' payment.id %}">Pay</a>
+                    <button class="btn info open-pay-modal"
+                        data-id="{{ payment.id }}"
+                        data-trip="{{ payment.trip.id }}"
+                        data-driver="{{ payment.driver.user.username }}"
+                        data-amount="{{ payment.total_amount|floatformat:2 }}">
+                        Pay
+                    </button>
+                    <a class="btn success" href="{% url 'pay_driver' payment.id %}">Paid</a>
                 {% else %}
                     -
                 {% endif %}
             </td>
         </tr>
     {% empty %}
-        <tr><td colspan="9">No payments found.</td></tr>
+        <tr><td colspan="10">No payments found.</td></tr>
     {% endfor %}
     </tbody>
 </table>
 </div>
+
+<div class="pay-modal" id="pay-modal">
+    <div class="pay-card">
+        <div class="pay-header">
+            <div>
+                <h3>Razorpay Secure Checkout</h3>
+                <small>SMARTFLEET</small>
+            </div>
+            <button class="pay-close" type="button" id="pay-close">×</button>
+        </div>
+        <div class="pay-body">
+            <div class="pay-meta">Trip <span id="pay-trip">-</span> • Driver <span id="pay-driver">-</span></div>
+            <div class="pay-amount">₹ <span id="pay-amount">0.00</span></div>
+            <p class="pay-meta">Complete the payment using any test card details.</p>
+            <form method="post" id="pay-form">
+                {% csrf_token %}
+                <div class="pay-grid">
+                    <div class="pay-field">
+                        <label>Card Number</label>
+                        <input type="text" name="card_number" placeholder="4111 1111 1111 1111" required>
+                    </div>
+                    <div class="pay-field">
+                        <label>Name on Card</label>
+                        <input type="text" name="card_name" placeholder="Demo User" required>
+                    </div>
+                    <div class="pay-field">
+                        <label>Expiry</label>
+                        <input type="text" name="card_expiry" placeholder="12/26" required>
+                    </div>
+                    <div class="pay-field">
+                        <label>CVV</label>
+                        <input type="password" name="card_cvv" placeholder="123" required>
+                    </div>
+                </div>
+                <div class="pay-actions">
+                    <button class="btn success" type="submit">Pay Now</button>
+                    <button class="btn secondary" type="button" id="pay-cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById("pay-modal");
+    const payForm = document.getElementById("pay-form");
+    const payTrip = document.getElementById("pay-trip");
+    const payDriver = document.getElementById("pay-driver");
+    const payAmount = document.getElementById("pay-amount");
+    const closeBtn = document.getElementById("pay-close");
+    const cancelBtn = document.getElementById("pay-cancel");
+
+    document.querySelectorAll(".open-pay-modal").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const id = btn.dataset.id;
+            payTrip.textContent = btn.dataset.trip || "-";
+            payDriver.textContent = btn.dataset.driver || "-";
+            payAmount.textContent = btn.dataset.amount || "0.00";
+            payForm.action = `/manager/payments/${id}/dummy/`;
+            modal.classList.add("show");
+        });
+    });
+
+    [closeBtn, cancelBtn].forEach(btn => {
+        btn.addEventListener("click", () => modal.classList.remove("show"));
+    });
+</script>
 {% endblock %}
