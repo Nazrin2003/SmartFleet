@@ -766,8 +766,6 @@ def create_trip(request):
         driver_id = (request.POST.get("driver_id") or "").strip()
         origin = (request.POST.get("origin") or "").strip()
         destination = (request.POST.get("destination") or "").strip()
-        planned_origin_place_id = (request.POST.get("planned_origin_place_id") or "").strip() or None
-        planned_destination_place_id = (request.POST.get("planned_destination_place_id") or "").strip() or None
         planned_origin_lat = _to_float(request.POST.get("planned_origin_lat"))
         planned_origin_lng = _to_float(request.POST.get("planned_origin_lng"))
         planned_destination_lat = _to_float(request.POST.get("planned_destination_lat"))
@@ -786,21 +784,21 @@ def create_trip(request):
             return render(
                 request,
                 'trip_create.html',
-                {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+                {'reg': reg, 'drivers': eligible_drivers},
             )
         if not origin or not destination:
             messages.error(request, "Origin and destination are required.")
             return render(
                 request,
                 'trip_create.html',
-                {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+                {'reg': reg, 'drivers': eligible_drivers},
             )
         if not any((name or "").strip() for name in item_names):
             messages.error(request, "Please add at least one delivery item.")
             return render(
                 request,
                 'trip_create.html',
-                {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+                {'reg': reg, 'drivers': eligible_drivers},
             )
 
         driver = eligible_drivers.filter(id=int(driver_id)).first()
@@ -812,7 +810,7 @@ def create_trip(request):
             return render(
                 request,
                 'trip_create.html',
-                {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+                {'reg': reg, 'drivers': eligible_drivers},
             )
 
         with transaction.atomic():
@@ -821,8 +819,6 @@ def create_trip(request):
                 vehicle=driver.assigned_vehicle,
                 planned_origin=origin,
                 planned_destination=destination,
-                planned_origin_place_id=planned_origin_place_id,
-                planned_destination_place_id=planned_destination_place_id,
                 planned_origin_lat=planned_origin_lat,
                 planned_origin_lng=planned_origin_lng,
                 planned_destination_lat=planned_destination_lat,
@@ -870,7 +866,7 @@ def create_trip(request):
     return render(
         request,
         'trip_create.html',
-        {'reg': reg, 'drivers': eligible_drivers, 'maps_key': settings.GOOGLE_MAPS_API_KEY},
+        {'reg': reg, 'drivers': eligible_drivers},
     )
 
 
@@ -1228,8 +1224,6 @@ def trip_detail(request, trip_id):
             "reg": reg,
             "trip": trip,
             "show_actions": True,
-            "show_map": True,
-            "maps_key": settings.GOOGLE_MAPS_API_KEY,
         },
     )
 

@@ -56,7 +56,7 @@
 </div>
 <div class="panel">
 <table>
-    <thead><tr><th>Trip ID</th><th>Driver</th><th>Vehicle</th><th>Planned Origin</th><th>Planned Destination</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Status</th><th>Date</th></tr></thead>
+    <thead><tr><th>Trip ID</th><th>Driver</th><th>Vehicle</th><th>Planned Origin</th><th>Planned Destination</th><th>Actual Start</th><th>Actual End</th><th>Actual Distance (km)</th><th>Status</th><th>Date</th><th>View</th></tr></thead>
     <tbody>
     {% for trip in trips %}
     <tr>
@@ -80,9 +80,10 @@
             {% endif %}
         </td>
         <td>{{ trip.created_at }}</td>
+        <td><a class="btn info" href="{% url 'trip_detail_manager' trip.id %}">View</a></td>
     </tr>
     {% empty %}
-    <tr><td colspan="10">No trips.</td></tr>
+    <tr><td colspan="11">No trips.</td></tr>
     {% endfor %}
     </tbody>
 </table>

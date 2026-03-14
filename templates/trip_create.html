@@ -11,6 +11,24 @@
     .items-table th, .items-table td { padding: 8px; }
     .items-actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
     .items-table input, .items-table select { max-width: 100%; }
+    .suggestions { position: relative; z-index: 5; }
+    .suggestion-list {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+        margin-top: 6px;
+        overflow: hidden;
+    }
+    .suggestion-item {
+        padding: 8px 10px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: #374151;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .suggestion-item:last-child { border-bottom: 0; }
+    .suggestion-item:hover { background: #f8fafc; }
 </style>
 {% endblock %}
 {% block content %}
@@ -36,16 +54,16 @@
     <p>
         <label>Origin</label><br>
         <input type="text" id="origin-input" name="origin" required placeholder="Search place">
-        <input type="hidden" name="planned_origin_place_id" id="origin-place-id">
         <input type="hidden" name="planned_origin_lat" id="origin-lat">
         <input type="hidden" name="planned_origin_lng" id="origin-lng">
+        <div id="origin-suggestions" class="suggestions"></div>
     </p>
     <p>
         <label>Destination</label><br>
         <input type="text" id="destination-input" name="destination" required placeholder="Search place">
-        <input type="hidden" name="planned_destination_place_id" id="destination-place-id">
         <input type="hidden" name="planned_destination_lat" id="destination-lat">
         <input type="hidden" name="planned_destination_lng" id="destination-lng">
+        <div id="destination-suggestions" class="suggestions"></div>
     </p>
     <p><label>Load</label><br><input type="text" name="load_details"></p>
     <p><label>Estimated Distance (km)</label><br><input type="number" step="0.01" name="estimated_distance_km"></p>
@@ -132,44 +150,88 @@ document.addEventListener('input', function (event) {
     }
 });
 </script>
-{% if maps_key %}
 <script>
-function initTripAutocomplete() {
-    const keralaBounds = new google.maps.LatLngBounds(
-        new google.maps.LatLng(8.0, 74.8),
-        new google.maps.LatLng(12.9, 77.4)
-    );
-    const originInput = document.getElementById("origin-input");
-    const destInput = document.getElementById("destination-input");
-    if (!originInput || !destInput) return;
+const originInput = document.getElementById("origin-input");
+const destinationInput = document.getElementById("destination-input");
+const originList = document.getElementById("origin-suggestions");
+const destinationList = document.getElementById("destination-suggestions");
+const originLat = document.getElementById("origin-lat");
+const originLng = document.getElementById("origin-lng");
+const destinationLat = document.getElementById("destination-lat");
+const destinationLng = document.getElementById("destination-lng");
+const distanceInput = document.querySelector('input[name="estimated_distance_km"]');
+const timeInput = document.querySelector('input[name="estimated_time_hours"]');
 
-    const options = {
-        componentRestrictions: { country: "in" },
-        bounds: keralaBounds,
-        fields: ["place_id", "formatted_address", "geometry"],
-        strictBounds: false,
-    };
+let originTimer;
+let destinationTimer;
 
-    const originAuto = new google.maps.places.Autocomplete(originInput, options);
-    const destAuto = new google.maps.places.Autocomplete(destInput, options);
-
-    originAuto.addListener("place_changed", () => {
-        const place = originAuto.getPlace();
-        document.getElementById("origin-place-id").value = place.place_id || "";
-        document.getElementById("origin-lat").value = place.geometry ? place.geometry.location.lat() : "";
-        document.getElementById("origin-lng").value = place.geometry ? place.geometry.location.lng() : "";
-        if (place.formatted_address) originInput.value = place.formatted_address;
+function renderSuggestions(target, items, onSelect) {
+    if (!items.length) {
+        target.innerHTML = "";
+        return;
+    }
+    const list = document.createElement("div");
+    list.className = "suggestion-list";
+    items.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "suggestion-item";
+        div.textContent = item.display_name;
+        div.onclick = () => onSelect(item);
+        list.appendChild(div);
     });
-
-    destAuto.addListener("place_changed", () => {
-        const place = destAuto.getPlace();
-        document.getElementById("destination-place-id").value = place.place_id || "";
-        document.getElementById("destination-lat").value = place.geometry ? place.geometry.location.lat() : "";
-        document.getElementById("destination-lng").value = place.geometry ? place.geometry.location.lng() : "";
-        if (place.formatted_address) destInput.value = place.formatted_address;
-    });
+    target.innerHTML = "";
+    target.appendChild(list);
 }
+
+async function fetchSuggestions(query) {
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=in&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url);
+    return await res.json();
+}
+
+async function updateRoute() {
+    if (!originLat.value || !originLng.value || !destinationLat.value || !destinationLng.value) return;
+    const url = `https://router.project-osrm.org/route/v1/driving/${originLng.value},${originLat.value};${destinationLng.value},${destinationLat.value}?overview=false`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.routes || !data.routes.length) return;
+    const route = data.routes[0];
+    const km = (route.distance / 1000).toFixed(2);
+    const hours = (route.duration / 3600).toFixed(2);
+    if (distanceInput) distanceInput.value = km;
+    if (timeInput) timeInput.value = hours;
+}
+
+originInput.addEventListener("input", () => {
+    clearTimeout(originTimer);
+    originTimer = setTimeout(async () => {
+        const q = originInput.value.trim();
+        if (q.length < 3) return renderSuggestions(originList, [], () => {});
+        const items = await fetchSuggestions(q);
+        renderSuggestions(originList, items, item => {
+            originInput.value = item.display_name;
+            originLat.value = item.lat;
+            originLng.value = item.lon;
+            originList.innerHTML = "";
+            updateRoute();
+        });
+    }, 250);
+});
+
+destinationInput.addEventListener("input", () => {
+    clearTimeout(destinationTimer);
+    destinationTimer = setTimeout(async () => {
+        const q = destinationInput.value.trim();
+        if (q.length < 3) return renderSuggestions(destinationList, [], () => {});
+        const items = await fetchSuggestions(q);
+        renderSuggestions(destinationList, items, item => {
+            destinationInput.value = item.display_name;
+            destinationLat.value = item.lat;
+            destinationLng.value = item.lon;
+            destinationList.innerHTML = "";
+            updateRoute();
+        });
+    }, 250);
+});
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key={{ maps_key }}&libraries=places&callback=initTripAutocomplete" async defer></script>
-{% endif %}
 {% endblock %}

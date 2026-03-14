@@ -53,6 +53,9 @@
         body * { visibility: hidden; }
         .print-area, .print-area * { visibility: visible; }
         .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        .panel, .panel * { visibility: visible; }
+        .route-map, #route-map { display: none !important; }
+        .hero, .print-actions { display: none !important; }
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #111; padding: 6px; font-size: 12pt; }
         th { background: #f3f4f6; color: #111; }
@@ -97,7 +100,7 @@
     </div>
 </div>
 
-{% if show_map and maps_key %}
+{% if trip.planned_origin_lat and trip.planned_origin_lng and trip.planned_destination_lat and trip.planned_destination_lng %}
 <div class="panel">
     <h3>Best Route</h3>
     <div id="route-map" class="route-map"></div>
@@ -206,64 +209,30 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
-{% if show_map and maps_key %}
+{% if trip.planned_origin_lat and trip.planned_origin_lng and trip.planned_destination_lat and trip.planned_destination_lng %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
-function initTripMap() {
-    const mapEl = document.getElementById("route-map");
-    if (!mapEl) return;
+    const origin = [{{ trip.planned_origin_lat }}, {{ trip.planned_origin_lng }}];
+    const dest = [{{ trip.planned_destination_lat }}, {{ trip.planned_destination_lng }}];
+    const map = L.map('route-map').setView(origin, 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    const originPlaceId = "{{ trip.planned_origin_place_id|default:'' }}";
-    const destPlaceId = "{{ trip.planned_destination_place_id|default:'' }}";
-    const originLat = {{ trip.planned_origin_lat|default_if_none:"null" }};
-    const originLng = {{ trip.planned_origin_lng|default_if_none:"null" }};
-    const destLat = {{ trip.planned_destination_lat|default_if_none:"null" }};
-    const destLng = {{ trip.planned_destination_lng|default_if_none:"null" }};
-
-    let origin;
-    let destination;
-
-    if (originPlaceId) {
-        origin = { placeId: originPlaceId };
-    } else if (originLat !== null && originLng !== null) {
-        origin = { lat: originLat, lng: originLng };
-    } else {
-        origin = "{{ trip.planned_origin|default:trip.origin|escapejs }}";
-    }
-
-    if (destPlaceId) {
-        destination = { placeId: destPlaceId };
-    } else if (destLat !== null && destLng !== null) {
-        destination = { lat: destLat, lng: destLng };
-    } else {
-        destination = "{{ trip.planned_destination|default:trip.destination|escapejs }}";
-    }
-
-    const map = new google.maps.Map(mapEl, {
-        zoom: 10,
-        center: { lat: 10.3529, lng: 76.5125 },
-        mapTypeControl: false,
-        streetViewControl: false,
-    });
-
-    const directionsService = new google.maps.DirectionsService();
-    const directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
-
-    directionsService.route(
-        {
-            origin: origin,
-            destination: destination,
-            travelMode: google.maps.TravelMode.DRIVING,
-        },
-        function (result, status) {
-            if (status === "OK") {
-                directionsRenderer.setDirections(result);
-            } else {
-                console.warn("Directions request failed:", status);
-            }
-        }
-    );
-}
+    const routeUrl = `https://router.project-osrm.org/route/v1/driving/${origin[1]},${origin[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson`;
+    fetch(routeUrl)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.routes || !data.routes.length) return;
+            const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            const line = L.polyline(coords, { color: '#6f42c1', weight: 5 }).addTo(map);
+            L.marker(origin, { title: 'Origin' }).addTo(map);
+            L.marker(dest, { title: 'Destination' }).addTo(map);
+            map.fitBounds(line.getBounds(), { padding: [20, 20] });
+        })
+        .catch(() => {});
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key={{ maps_key }}&callback=initTripMap" async defer></script>
 {% endif %}
 {% endblock %}

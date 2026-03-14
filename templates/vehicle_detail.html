@@ -32,7 +32,9 @@
     <div class="meta"><h4>Usage Hours</h4><p>{{ vehicle.usage_hours }}</p></div>
     <div class="meta"><h4>Battery Status</h4><p>{{ vehicle.battery_status|default:"-" }}</p></div>
     <div class="meta"><h4>Status</h4><p>{{ vehicle.get_status_display }}</p></div>
-    <div class="meta"><h4>Assigned Driver</h4><p>{% if vehicle.assigned_driver %}{{ vehicle.assigned_driver.user.username }}{% else %}-{% endif %}</p></div>
+    {% if vehicle.assigned_driver %}
+    <div class="meta"><h4>Assigned Driver</h4><p>{{ vehicle.assigned_driver.user.username }}</p></div>
+    {% endif %}
 </div>
 
 <div class="panel">
