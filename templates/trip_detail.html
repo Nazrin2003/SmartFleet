@@ -135,7 +135,7 @@
     </table>
 </div>
 
-{% if show_actions|default:True %}
+{% if show_actions|default:False and reg and reg.user_role == 'driver' %}
 
 {% if trip.status == 'pending' %}
 <div class="panel">
