@@ -144,20 +144,11 @@ erDiagram
 
 ## Screenshots
 
-Add your screenshots here:
+![Landing Page](screenshots/home.png)
+![Login Page](screenshots/login.png)
+![Login Page](screenshots/admin_home.png)
+![Login Page](screenshots/manager_home.png)
 
-- `screenshots/home.png`
-- `screenshots/login.png`
-- `screenshots/admin_home.png`
-- `screenshots/manager_home.png`
-<!-- - `screenshots/driver_trip_detail.png`
-- `screenshots/payments.png` -->
-
-Example usage in README:
-
-```
-![Manager Trips](screenshots/manager_trips.png)
-```
 
 ---
 
