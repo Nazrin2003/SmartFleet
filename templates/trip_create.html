@@ -47,28 +47,28 @@
         <select name="driver_id" required>
             <option value="">Select Driver</option>
             {% for driver in drivers %}
-            <option value="{{ driver.id }}">{{ driver.user.username }} ({{ driver.assigned_vehicle.plate_number }})</option>
+            <option value="{{ driver.id }}" {% if request.POST.driver_id == driver.id|stringformat:"s" %}selected{% endif %}>{{ driver.user.first_name }} {{ driver.user.last_name }} ({{ driver.assigned_vehicle.plate_number }})</option>
             {% endfor %}
         </select>
     </p>
     <p>
         <label>Origin</label><br>
-        <input type="text" id="origin-input" name="origin" required placeholder="Search place">
-        <input type="hidden" name="planned_origin_lat" id="origin-lat">
-        <input type="hidden" name="planned_origin_lng" id="origin-lng">
+        <input type="text" id="origin-input" name="origin" required placeholder="Search place" value="{{ request.POST.origin|default:'' }}">
+        <input type="hidden" name="planned_origin_lat" id="origin-lat" value="{{ request.POST.planned_origin_lat|default:'' }}">
+        <input type="hidden" name="planned_origin_lng" id="origin-lng" value="{{ request.POST.planned_origin_lng|default:'' }}">
         <div id="origin-suggestions" class="suggestions"></div>
     </p>
     <p>
         <label>Destination</label><br>
-        <input type="text" id="destination-input" name="destination" required placeholder="Search place">
-        <input type="hidden" name="planned_destination_lat" id="destination-lat">
-        <input type="hidden" name="planned_destination_lng" id="destination-lng">
+        <input type="text" id="destination-input" name="destination" required placeholder="Search place" value="{{ request.POST.destination|default:'' }}">
+        <input type="hidden" name="planned_destination_lat" id="destination-lat" value="{{ request.POST.planned_destination_lat|default:'' }}">
+        <input type="hidden" name="planned_destination_lng" id="destination-lng" value="{{ request.POST.planned_destination_lng|default:'' }}">
         <div id="destination-suggestions" class="suggestions"></div>
     </p>
-    <p><label>Load</label><br><input type="text" name="load_details"></p>
-    <p><label>Estimated Distance (km)</label><br><input type="number" step="0.01" name="estimated_distance_km"></p>
-    <p><label>Estimated Time (hours)</label><br><input type="number" step="0.01" name="estimated_time_hours"></p>
-    <p><label>Scheduled Date</label><br><input type="date" name="scheduled_date"></p>
+    <p><label>Load (Total Weight kg)</label><br><input type="text" name="load_details" value="{{ request.POST.load_details|default:'' }}" readonly></p>
+    <p><label>Estimated Distance (km)</label><br><input type="number" step="0.01" name="estimated_distance_km" value="{{ request.POST.estimated_distance_km|default:'' }}"></p>
+    <p><label>Estimated Time (hours)</label><br><input type="number" step="0.01" name="estimated_time_hours" value="{{ request.POST.estimated_time_hours|default:'' }}"></p>
+    <p><label>Scheduled Date</label><br><input type="date" name="scheduled_date" value="{{ request.POST.scheduled_date|default:'' }}"></p>
     </div>
     <div class="items-panel">
         <h3>Delivery Items</h3>
@@ -77,8 +77,8 @@
                 <tr>
                     <th>Item Name</th>
                     <th>Qty</th>
-                    <th>Unit Weight</th>
-                    <th>Total Weight</th>
+                    <th>Unit Weight (kg)</th>
+                    <th>Total Weight (kg)</th>
                     <th>Fragile</th>
                     <th></th>
                 </tr>
@@ -87,7 +87,7 @@
                 <tr>
                     <td><input type="text" name="item_name[]" required></td>
                     <td><input type="number" name="item_quantity[]" min="1" value="1"></td>
-                    <td><input type="number" step="0.01" name="item_unit_weight[]"></td>
+                    <td><input type="number" step="0.01" name="item_unit_weight[]" placeholder="kg"></td>
                     <td><input type="number" step="0.01" name="item_total_weight[]" readonly></td>
                     <td>
                         <select name="item_fragile[]">
@@ -113,6 +113,18 @@ function calcRowTotal(row) {
     const unit = parseFloat(row.querySelector('input[name="item_unit_weight[]"]').value || 0);
     const total = qty > 0 && unit > 0 ? (qty * unit) : 0;
     row.querySelector('input[name="item_total_weight[]"]').value = total ? total.toFixed(2) : '';
+    calcLoadTotal();
+}
+
+function calcLoadTotal() {
+    const rows = document.querySelectorAll('#items-body tr');
+    let sum = 0;
+    rows.forEach(row => {
+        const val = parseFloat(row.querySelector('input[name="item_total_weight[]"]').value || 0);
+        sum += val;
+    });
+    const loadInput = document.querySelector('input[name="load_details"]');
+    if (loadInput) loadInput.value = sum ? sum.toFixed(2) : '';
 }
 
 function addItemRow() {
@@ -121,9 +133,9 @@ function addItemRow() {
     row.innerHTML = `
         <td><input type="text" name="item_name[]" required></td>
         <td><input type="number" name="item_quantity[]" min="1" value="1"></td>
-        <td><input type="number" step="0.01" name="item_unit_weight[]"></td>
+        <td><input type="number" step="0.01" name="item_unit_weight[]" placeholder="kg"></td>
         <td><input type="number" step="0.01" name="item_total_weight[]" readonly></td>
-        <td>
+    <td>
             <select name="item_fragile[]">
                 <option value="no">No</option>
                 <option value="yes">Yes</option>
@@ -148,6 +160,10 @@ document.addEventListener('input', function (event) {
         const row = event.target.closest('tr');
         calcRowTotal(row);
     }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    calcLoadTotal();
 });
 </script>
 <script>

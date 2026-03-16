@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -95,16 +96,17 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 6},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 's_fleet.validators.CharacterNumberValidator',
     },
 ]
 
@@ -145,5 +147,52 @@ STATICFILES_DIRS = [STATIC_DIR]
 # Razorpay (Sandbox)
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
+
+# Jazzmin config
+JAZZMIN_SETTINGS = {
+    "site_title": "SMARTFLEET Admin",
+    "site_header": "SMARTFLEET",
+    "site_brand": "SMARTFLEET",
+    "welcome_sign": "Welcome to SMARTFLEET Admin",
+    "copyright": "SMARTFLEET",
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "show_ui_builder": True,
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "View Site", "url": "/", "new_window": True},
+    ],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.group": "fas fa-users",
+        "s_fleet.Vehicle": "fas fa-truck",
+        "s_fleet.Driver": "fas fa-id-card",
+        "s_fleet.Trip": "fas fa-route",
+        "s_fleet.TripItem": "fas fa-boxes",
+        "s_fleet.TripCompletion": "fas fa-clipboard-check",
+        "s_fleet.TripExpense": "fas fa-receipt",
+        "s_fleet.TripPayment": "fas fa-credit-card",
+        "s_fleet.MaintenanceRecord": "fas fa-tools",
+        "s_fleet.PredictionResult": "fas fa-chart-line",
+        "s_fleet.Alert": "fas fa-bell",
+    },
+    "theme": "flatly",
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "theme": "flatly",
+    "navbar": "navbar-dark navbar-primary",
+    "sidebar": "sidebar-dark-primary",
+    "brand_colour": "navbar-primary",
+    "accent": "accent-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_nav_child_indent": True,
+    "navbar_fixed": True,
+    "sidebar_fixed": True,
+    "footer_fixed": False,
+    "small_text": False,
+    "brand_small_text": False,
+}
 
 

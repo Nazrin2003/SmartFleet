@@ -30,11 +30,12 @@
     {% endif %}
 </form>
 <table>
-    <thead><tr><th>Username</th><th>License</th><th>Phone</th><th>Profile</th><th>Status</th><th>Actions</th></tr></thead>
+    <thead><tr><th>Username</th><th>Driver Name</th><th>License</th><th>Phone</th><th>Profile</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>
     {% for item in drivers %}
     <tr>
         <td>{{ item.user.username }}</td>
+        <td>{{ item.user.first_name }} {{ item.user.last_name }}</td>
         <td>{{ item.license_number|default:'-' }}</td>
         <td>{{ item.phone_number|default:'-' }}</td>
         <td>{% if item.profile_complete %}Complete{% else %}Incomplete{% endif %}</td>
@@ -47,7 +48,7 @@
         </td>
     </tr>
     {% empty %}
-    <tr><td colspan="6">No drivers found.</td></tr>
+    <tr><td colspan="7">No drivers found.</td></tr>
     {% endfor %}
     </tbody>
 </table>

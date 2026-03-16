@@ -2,11 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q, Prefetch
 from django.http import HttpResponse
 from django.utils import timezone
+from datetime import timedelta
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 import csv
@@ -163,7 +166,43 @@ def _razorpay_verify_signature(order_id, payment_id, signature):
     return hmac.compare_digest(expected, signature or "")
 
 
+def _is_digits(value):
+    return value.isdigit() if value else False
+
+
+def _valid_phone(value):
+    return _is_digits(value) and len(value) == 10
+
+
+def _valid_year(value):
+    if value is None:
+        return True
+    current_year = timezone.now().year
+    return 1980 <= value <= current_year + 1
+
+
+def _valid_range(value, low=None, high=None):
+    if value is None:
+        return True
+    if low is not None and value < low:
+        return False
+    if high is not None and value > high:
+        return False
+    return True
+
+
 def _is_profile_complete(driver):
+    if driver.license_expiry_date:
+        expiry = driver.license_expiry_date
+        if isinstance(expiry, str):
+            try:
+                expiry = timezone.datetime.strptime(expiry, "%Y-%m-%d").date()
+            except ValueError:
+                expiry = None
+        if expiry:
+            soon_threshold = timezone.now().date() + timedelta(days=30)
+            if expiry <= soon_threshold:
+                return False
     required_fields = [
         "license_number",
         "license_expiry_date",
@@ -240,7 +279,7 @@ def admin_home(request):
     context = {
         'reg': reg,
         'total_managers': Registration.objects.filter(user_role='manager').count(),
-        'total_drivers': Registration.objects.filter(user_role='driver').count(),
+        'total_drivers': Driver.objects.count(),
         'total_vehicles': Vehicle.objects.count(),
         'total_trips': Trip.objects.count(),
     }
@@ -275,6 +314,14 @@ def add_manager_adm(request):
         if not username or not password:
             messages.error(request, 'Username and password are required.')
             return render(request, 'manager_form_adm.html', {'reg': reg, 'mode': 'add'})
+        if len(username) < 3 or " " in username:
+            messages.error(request, 'Username must be at least 3 characters and contain no spaces.')
+            return render(request, 'manager_form_adm.html', {'reg': reg, 'mode': 'add'})
+        try:
+            validate_password(password)
+        except ValidationError as exc:
+            messages.error(request, " ".join(exc.messages))
+            return render(request, 'manager_form_adm.html', {'reg': reg, 'mode': 'add'})
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Username already exists.')
             return render(request, 'manager_form_adm.html', {'reg': reg, 'mode': 'add'})
@@ -304,6 +351,9 @@ def edit_manager_adm(request, reg_id):
         if not username:
             messages.error(request, 'Username is required.')
             return render(request, 'manager_form_adm.html', {'reg': reg, 'mode': 'edit', 'manager': manager_reg})
+        if len(username) < 3 or " " in username:
+            messages.error(request, 'Username must be at least 3 characters and contain no spaces.')
+            return render(request, 'manager_form_adm.html', {'reg': reg, 'mode': 'edit', 'manager': manager_reg})
         if User.objects.filter(username=username).exclude(id=manager_reg.user_id).exists():
             messages.error(request, 'Username already exists.')
             return render(request, 'manager_form_adm.html', {'reg': reg, 'mode': 'edit', 'manager': manager_reg})
@@ -314,6 +364,11 @@ def edit_manager_adm(request, reg_id):
         user.last_name = (request.POST.get('last_name') or '').strip()
         new_password = request.POST.get('password')
         if new_password:
+            try:
+                validate_password(new_password, user=user)
+            except ValidationError as exc:
+                messages.error(request, " ".join(exc.messages))
+                return render(request, 'manager_form_adm.html', {'reg': reg, 'mode': 'edit', 'manager': manager_reg})
             user.set_password(new_password)
         user.save()
         messages.success(request, 'Manager updated.')
@@ -372,6 +427,14 @@ def add_driver_adm(request):
         if not username or not password:
             messages.error(request, 'Username and password are required.')
             return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'add'})
+        if len(username) < 3 or " " in username:
+            messages.error(request, 'Username must be at least 3 characters and contain no spaces.')
+            return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'add'})
+        try:
+            validate_password(password)
+        except ValidationError as exc:
+            messages.error(request, " ".join(exc.messages))
+            return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'add'})
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Username already exists.')
             return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'add'})
@@ -401,6 +464,9 @@ def edit_driver_adm(request, driver_id):
         if not username:
             messages.error(request, 'Username is required.')
             return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'edit', 'driver_obj': driver})
+        if len(username) < 3 or " " in username:
+            messages.error(request, 'Username must be at least 3 characters and contain no spaces.')
+            return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'edit', 'driver_obj': driver})
         if User.objects.filter(username=username).exclude(id=driver.user_id).exists():
             messages.error(request, 'Username already exists.')
             return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'edit', 'driver_obj': driver})
@@ -411,6 +477,11 @@ def edit_driver_adm(request, driver_id):
         user.last_name = (request.POST.get('last_name') or '').strip()
         new_password = request.POST.get('password')
         if new_password:
+            try:
+                validate_password(new_password, user=user)
+            except ValidationError as exc:
+                messages.error(request, " ".join(exc.messages))
+                return render(request, 'driver_form_adm.html', {'reg': reg, 'mode': 'edit', 'driver_obj': driver})
             user.set_password(new_password)
         user.save()
         messages.success(request, 'Driver updated.')
@@ -728,6 +799,18 @@ def vehicle_create(request):
         if not plate_number or not model_name:
             messages.error(request, "Plate number and model are required.")
             return render(request, 'vehicle_form.html', {'reg': reg, 'mode': 'create'})
+        if not _valid_year(year_of_manufacture):
+            messages.error(request, "Year of manufacture is not valid.")
+            return render(request, 'vehicle_form.html', {'reg': reg, 'mode': 'create'})
+        if not _valid_range(load_capacity, 0):
+            messages.error(request, "Load capacity must be zero or higher.")
+            return render(request, 'vehicle_form.html', {'reg': reg, 'mode': 'create'})
+        if not _valid_range(usage_hours, 0):
+            messages.error(request, "Usage hours must be zero or higher.")
+            return render(request, 'vehicle_form.html', {'reg': reg, 'mode': 'create'})
+        if not _valid_range(battery_status, 0, 100):
+            messages.error(request, "Battery status must be between 0 and 100.")
+            return render(request, 'vehicle_form.html', {'reg': reg, 'mode': 'create'})
 
         if Vehicle.objects.filter(plate_number=plate_number).exists():
             messages.error(request, "Vehicle with this plate number already exists.")
@@ -793,6 +876,18 @@ def create_trip(request):
                 'trip_create.html',
                 {'reg': reg, 'drivers': eligible_drivers},
             )
+        if (planned_origin_lat is None) != (planned_origin_lng is None):
+            messages.error(request, "Origin latitude/longitude must both be set.")
+            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+        if (planned_destination_lat is None) != (planned_destination_lng is None):
+            messages.error(request, "Destination latitude/longitude must both be set.")
+            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+        if not _valid_range(estimated_distance_km, 0):
+            messages.error(request, "Estimated distance must be zero or higher.")
+            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+        if not _valid_range(estimated_time_hours, 0):
+            messages.error(request, "Estimated time must be zero or higher.")
+            return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
         if not any((name or "").strip() for name in item_names):
             messages.error(request, "Please add at least one delivery item.")
             return render(
@@ -800,6 +895,18 @@ def create_trip(request):
                 'trip_create.html',
                 {'reg': reg, 'drivers': eligible_drivers},
             )
+        for idx, name in enumerate(item_names):
+            item_name = (name or "").strip()
+            if not item_name:
+                continue
+            quantity = _to_int(item_quantities[idx]) if idx < len(item_quantities) else None
+            unit_weight = _to_float(item_unit_weights[idx]) if idx < len(item_unit_weights) else None
+            if quantity is not None and quantity <= 0:
+                messages.error(request, "Item quantity must be at least 1.")
+                return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
+            if unit_weight is not None and unit_weight < 0:
+                messages.error(request, "Item unit weight must be zero or higher.")
+                return render(request, 'trip_create.html', {'reg': reg, 'drivers': eligible_drivers})
 
         driver = eligible_drivers.filter(id=int(driver_id)).first()
         if not driver:
@@ -916,6 +1023,26 @@ def vehicle_edit(request, vehicle_id):
 
         if not plate_number or not model_name:
             messages.error(request, "Plate number and model are required.")
+            return render(
+                request, "vehicle_form.html", {"reg": reg, "mode": "edit", "vehicle": vehicle}
+            )
+        if not _valid_year(year_of_manufacture):
+            messages.error(request, "Year of manufacture is not valid.")
+            return render(
+                request, "vehicle_form.html", {"reg": reg, "mode": "edit", "vehicle": vehicle}
+            )
+        if not _valid_range(load_capacity, 0):
+            messages.error(request, "Load capacity must be zero or higher.")
+            return render(
+                request, "vehicle_form.html", {"reg": reg, "mode": "edit", "vehicle": vehicle}
+            )
+        if not _valid_range(usage_hours, 0):
+            messages.error(request, "Usage hours must be zero or higher.")
+            return render(
+                request, "vehicle_form.html", {"reg": reg, "mode": "edit", "vehicle": vehicle}
+            )
+        if not _valid_range(battery_status, 0, 100):
+            messages.error(request, "Battery status must be between 0 and 100.")
             return render(
                 request, "vehicle_form.html", {"reg": reg, "mode": "edit", "vehicle": vehicle}
             )
@@ -1065,6 +1192,7 @@ def driver_home(request):
     reg_id = request.session.get('reg_id')
     reg = Registration.objects.filter(id=reg_id).first()
     driver, _ = Driver.objects.get_or_create(user=request.user)
+    total_drivers = Registration.objects.filter(user_role='driver').count()
     active_trips = Trip.objects.filter(driver=driver, status=Trip.STATUS_IN_PROGRESS).count()
     completed_trips = Trip.objects.filter(driver=driver, status=Trip.STATUS_COMPLETED).count()
     notifications = driver.alerts.filter(is_resolved=False).exclude(
@@ -1077,6 +1205,7 @@ def driver_home(request):
             'reg': reg,
             'driver': driver,
             'assigned_vehicle': driver.assigned_vehicle,
+            'total_drivers': total_drivers,
             'active_trips': active_trips,
             'completed_trips': completed_trips,
             'profile_complete': _is_profile_complete(driver),
@@ -1094,6 +1223,9 @@ def driver_profile(request):
     driver, _ = Driver.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
+        username = (request.POST.get("username") or "").strip()
+        first_name = (request.POST.get("first_name") or "").strip()
+        last_name = (request.POST.get("last_name") or "").strip()
         license_number = (request.POST.get("license_number") or "").strip() or None
         license_expiry_date = (request.POST.get("license_expiry_date") or "").strip() or None
         phone_number = (request.POST.get("phone_number") or "").strip() or None
@@ -1101,6 +1233,28 @@ def driver_profile(request):
         years_of_experience = _to_int(request.POST.get("years_of_experience"))
         emergency_contact_name = (request.POST.get("emergency_contact_name") or "").strip() or None
         emergency_contact_phone = (request.POST.get("emergency_contact_phone") or "").strip() or None
+
+        if not username:
+            messages.error(request, "Username is required.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
+        if len(username) < 3 or " " in username:
+            messages.error(request, "Username must be at least 3 characters and contain no spaces.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
+        if User.objects.filter(username=username).exclude(id=request.user.id).exists():
+            messages.error(request, "Username already exists.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
 
         if (
             not license_number
@@ -1116,6 +1270,43 @@ def driver_profile(request):
                 "driver_profile.html",
                 {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
             )
+        if not _valid_phone(phone_number):
+            messages.error(request, "Phone number must be 10 digits.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
+        if not _valid_phone(emergency_contact_phone):
+            messages.error(request, "Emergency contact phone must be 10 digits.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
+        if years_of_experience is not None and years_of_experience < 0:
+            messages.error(request, "Years of experience must be zero or higher.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
+        try:
+            exp_date = timezone.datetime.strptime(license_expiry_date, "%Y-%m-%d").date()
+            if exp_date <= timezone.now().date():
+                messages.error(request, "License expiry date must be in the future.")
+                return render(
+                    request,
+                    "driver_profile.html",
+                    {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+                )
+        except ValueError:
+            messages.error(request, "License expiry date format is invalid.")
+            return render(
+                request,
+                "driver_profile.html",
+                {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
+            )
         if Driver.objects.filter(license_number=license_number).exclude(id=driver.id).exists():
             messages.error(request, "License number already exists.")
             return render(
@@ -1123,6 +1314,11 @@ def driver_profile(request):
                 "driver_profile.html",
                 {"reg": reg, "driver": driver, "profile_complete": _is_profile_complete(driver)},
             )
+
+        request.user.username = username
+        request.user.first_name = first_name
+        request.user.last_name = last_name
+        request.user.save(update_fields=["username", "first_name", "last_name"])
 
         driver.license_number = license_number
         driver.license_expiry_date = license_expiry_date
@@ -1277,13 +1473,39 @@ def trip_complete_form(request, trip_id):
         expense_amounts = request.POST.getlist("expense_amount[]")
 
         if engine_temp is None or oil_quality is None or brake_condition is None:
-            messages.error(request, "Engine temperature, oil quality, and brake condition are required.")
+            messages.error(
+                request,
+                "Engine temperature, oil quality, and brake condition are required.",
+            )
+            return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
+        if not _valid_range(engine_temp, 0, 200):
+            messages.error(request, "Engine temperature must be between 0 and 200.")
+            return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
+        if not _valid_range(oil_quality, 0, 100):
+            messages.error(request, "Oil quality must be between 0 and 100.")
+            return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
+        if not _valid_range(brake_condition, 0, 100):
+            messages.error(request, "Brake condition must be between 0 and 100.")
             return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
         if end_lat is None or end_lng is None:
             messages.error(request, "Unable to capture end GPS location. Allow location access and submit again.")
             return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
+        for idx, desc in enumerate(expense_descs):
+            description = (desc or "").strip()
+            if not description:
+                continue
+            amount = _to_float(expense_amounts[idx]) if idx < len(expense_amounts) else None
+            if amount is None:
+                messages.error(request, "Expense amount must be a valid number.")
+                return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
+            if amount < 0:
+                messages.error(request, "Expense amount cannot be negative.")
+                return render(request, "trip_complete_form.html", {"reg": reg, "trip": trip})
 
         completion, _ = TripCompletion.objects.get_or_create(trip=trip)
+        if trip.started_at:
+            duration_seconds = (timezone.now() - trip.started_at).total_seconds()
+            completion.actual_delivery_time = round(duration_seconds / 3600, 2)
         completion.engine_temp = engine_temp
         completion.oil_quality = oil_quality
         completion.brake_condition = brake_condition
@@ -1744,6 +1966,15 @@ def change_password_view(request):
             )
         if new_password != confirm_password:
             messages.error(request, "New password and confirm password do not match.")
+            return render(
+                request,
+                "change_password.html",
+                {"reg": reg, "base_template": base_template, "home_url_name": home_url_name},
+            )
+        try:
+            validate_password(new_password, user=request.user)
+        except ValidationError as exc:
+            messages.error(request, " ".join(exc.messages))
             return render(
                 request,
                 "change_password.html",

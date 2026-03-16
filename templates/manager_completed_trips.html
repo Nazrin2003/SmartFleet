@@ -52,7 +52,7 @@
         <p><label>Driver</label><br><select name="driver">
             <option value="">All Drivers</option>
             {% for d in drivers %}
-            <option value="{{ d.id }}" {% if request.GET.driver == d.id|stringformat:"s" %}selected{% endif %}>{{ d.user.username }}</option>
+            <option value="{{ d.id }}" {% if request.GET.driver == d.id|stringformat:"s" %}selected{% endif %}>{{ d.user.first_name }} {{ d.user.last_name }}</option>
             {% endfor %}
         </select></p>
         <p><label>Date From</label><br><input type="date" name="date_from" value="{{ request.GET.date_from }}"></p>
@@ -76,7 +76,7 @@
     {% for trip in trips %}
     <tr>
         <td>{{ trip.id }}</td>
-        <td>{{ trip.driver.user.username }}</td>
+        <td>{{ trip.driver.user.first_name }} {{ trip.driver.user.last_name }}</td>
         <td>{{ trip.vehicle.plate_number }}</td>
         <td>{{ trip.planned_origin|default:trip.origin }}</td>
         <td>{{ trip.planned_destination|default:trip.destination }}</td>

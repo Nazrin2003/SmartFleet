@@ -4,9 +4,9 @@
 <h2 style="margin-bottom:10px;">{% if mode == 'edit' %}Edit Driver{% else %}Add Driver{% endif %}</h2>
 <form method="post" style="display:grid;gap:10px;max-width:460px;">
     {% csrf_token %}
-    <div><label>Username</label><br><input type="text" name="username" required value="{{ driver_obj.user.username|default:'' }}"></div>
-    <div><label>First Name</label><br><input type="text" name="first_name" value="{{ driver_obj.user.first_name|default:'' }}"></div>
-    <div><label>Last Name</label><br><input type="text" name="last_name" value="{{ driver_obj.user.last_name|default:'' }}"></div>
+    <div><label>Username</label><br><input type="text" name="username" required value="{{ request.POST.username|default:driver_obj.user.username|default:'' }}"></div>
+    <div><label>First Name</label><br><input type="text" name="first_name" value="{{ request.POST.first_name|default:driver_obj.user.first_name|default:'' }}"></div>
+    <div><label>Last Name</label><br><input type="text" name="last_name" value="{{ request.POST.last_name|default:driver_obj.user.last_name|default:'' }}"></div>
     <div><label>Password {% if mode == 'edit' %}(leave blank to keep){% endif %}</label><br><input type="password" name="password" {% if mode != 'edit' %}required{% endif %}></div>
     <p style="font-size:.85rem;color:#6b7280;margin:0;">Profile details are completed by the driver in My Profile.</p>
     <div>

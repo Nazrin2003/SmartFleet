@@ -79,7 +79,13 @@
             <td>
                 <span class="status-badge status-{{ vehicle.status|slugify }}">{{ vehicle.get_status_display }}</span>
             </td>
-            <td>{% if vehicle.assigned_driver %}{{ vehicle.assigned_driver.user.username }}{% else %}-{% endif %}</td>
+            <td>
+                {% if vehicle.assigned_driver %}
+                    {{ vehicle.assigned_driver.user.first_name }} {{ vehicle.assigned_driver.user.last_name }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
             <td class="actions-cell">
                 <a class="action-btn action-view" href="{% url 'vehicle_detail' vehicle.id %}">View</a>
                 <a class="action-btn action-edit" href="{% url 'vehicle_edit' vehicle.id %}">Edit</a>

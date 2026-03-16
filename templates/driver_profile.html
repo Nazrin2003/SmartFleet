@@ -28,13 +28,16 @@
 <form method="post">
     {% csrf_token %}
     <div class="form-grid">
-    <p><label>License Number</label><br><input type="text" name="license_number" required value="{{ driver.license_number|default:'' }}"></p>
-    <p><label>License Expiry Date</label><br><input type="date" name="license_expiry_date" value="{{ driver.license_expiry_date|date:'Y-m-d' }}"></p>
-    <p><label>Phone Number</label><br><input type="text" name="phone_number" required value="{{ driver.phone_number|default:'' }}"></p>
-    <p><label>Address</label><br><input type="text" name="address" value="{{ driver.address|default:'' }}"></p>
-    <p><label>Years of Experience</label><br><input type="number" name="years_of_experience" required value="{{ driver.years_of_experience|default:'' }}"></p>
-    <p><label>Emergency Contact Name</label><br><input type="text" name="emergency_contact_name" required value="{{ driver.emergency_contact_name|default:'' }}"></p>
-    <p><label>Emergency Contact Phone</label><br><input type="text" name="emergency_contact_phone" required value="{{ driver.emergency_contact_phone|default:'' }}"></p>
+    <p><label>Username</label><br><input type="text" name="username" required value="{{ request.POST.username|default:reg.user.username|default:'' }}"></p>
+    <p><label>First Name</label><br><input type="text" name="first_name" value="{{ request.POST.first_name|default:reg.user.first_name|default:'' }}"></p>
+    <p><label>Last Name</label><br><input type="text" name="last_name" value="{{ request.POST.last_name|default:reg.user.last_name|default:'' }}"></p>
+    <p><label>License Number</label><br><input type="text" name="license_number" required placeholder="Enter license number" value="{{ request.POST.license_number|default:driver.license_number|default:'' }}"></p>
+    <p><label>License Expiry Date</label><br><input type="date" name="license_expiry_date" value="{{ request.POST.license_expiry_date|default:driver.license_expiry_date|date:'Y-m-d' }}"></p>
+    <p><label>Phone Number</label><br><input type="text" name="phone_number" required value="{{ request.POST.phone_number|default:driver.phone_number|default:'' }}"></p>
+    <p><label>Address</label><br><input type="text" name="address" value="{{ request.POST.address|default:driver.address|default:'' }}"></p>
+    <p><label>Years of Experience</label><br><input type="number" name="years_of_experience" required value="{{ request.POST.years_of_experience|default:driver.years_of_experience|default:'' }}"></p>
+    <p><label>Emergency Contact Name</label><br><input type="text" name="emergency_contact_name" required value="{{ request.POST.emergency_contact_name|default:driver.emergency_contact_name|default:'' }}"></p>
+    <p><label>Emergency Contact Phone</label><br><input type="text" name="emergency_contact_phone" required value="{{ request.POST.emergency_contact_phone|default:driver.emergency_contact_phone|default:'' }}"></p>
     </div>
     <button class="btn" type="submit">Save Profile</button>
 </form>

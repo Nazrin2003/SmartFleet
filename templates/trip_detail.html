@@ -166,8 +166,7 @@
 {% if trip.completion %}
 <div class="summary-grid">
     <div class="summary-item"><h4>Completed At</h4><p>{{ trip.completed_at }}</p></div>
-    <div class="summary-item"><h4>Actual Delivery Time</h4><p>{{ trip.completion.actual_delivery_time|default:"-" }}</p></div>
-    <div class="summary-item"><h4>Odometer</h4><p>{{ trip.completion.odometer_reading|default:"-" }}</p></div>
+    <div class="summary-item"><h4>Actual Delivery Time (hours)</h4><p>{{ trip.completion.actual_delivery_time|default:"-" }}</p></div>
     <div class="summary-item"><h4>Engine Temp</h4><p>{{ trip.completion.engine_temp|default:"-" }}</p></div>
     <div class="summary-item"><h4>Oil Quality</h4><p>{{ trip.completion.oil_quality|default:"-" }}</p></div>
     <div class="summary-item"><h4>Brake Condition</h4><p>{{ trip.completion.brake_condition|default:"-" }}</p></div>
