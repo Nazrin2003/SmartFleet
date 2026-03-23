@@ -1,209 +1,683 @@
 {% extends "base_manager.html" %}
 {% load static %}
-{% block title %}Driver Payments{% endblock %}
+
+{% block title %}Driver Payments | SMARTFLEET{% endblock %}
+
 {% block extra_styles %}
 <style>
-    .hero-payments { background-image: url('{% static "images/fleet2.jpg" %}'); min-height: 150px; display:flex; align-items:center; }
-    .filter-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:8px; align-items:end; }
-    .panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:12px; }
-    .badge { padding:3px 8px; border-radius:999px; font-size:.74rem; font-weight:700; background:#dcfce7; color:#166534; }
-    .badge.pending { background:#fef3c7; color:#92400e; }
-    .badge.approved { background:#dbeafe; color:#1e40af; }
-    .badge.paid { background:#dcfce7; color:#166534; }
-    .badge.rejected { background:#fee2e2; color:#991b1b; }
+    /* Hero Section */
+    .hero-payments {
+        background-image: url('{% static "images/fleet2.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        min-height: 200px;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+
+    .hero-payments::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(45, 27, 78, 0.85), rgba(111, 66, 193, 0.8));
+        z-index: 1;
+    }
+
+    .hero-payments > div {
+        position: relative;
+        z-index: 2;
+        padding: 2rem;
+    }
+
+    .hero-payments h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin-bottom: 0.5rem;
+    }
+
+    .hero-payments p {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Filters */
+    .filters {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .filter-grid label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .filter-grid select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.9rem;
+    }
+
+    /* Panel */
+    .panel {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Badges */
+    .badge {
+        display: inline-block;
+        padding: 0.4rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .badge.pending {
+        background: #FEF3C7;
+        color: #92400E;
+    }
+
+    .badge.approved {
+        background: #DBEAFE;
+        color: #1E40AF;
+    }
+
+    .badge.paid {
+        background: #D1FAE5;
+        color: #065F46;
+    }
+
+    .badge.rejected {
+        background: #FEE2E2;
+        color: #991B1B;
+    }
+
+    /* Razorpay Modal - Compact Style */
     .pay-modal {
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.55);
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
         display: none;
         align-items: center;
         justify-content: center;
-        z-index: 2000;
-        padding: 16px;
+        z-index: 9999;
+        padding: 1rem;
+        animation: fadeIn 0.2s ease;
+        overflow-y: auto;
     }
-    .pay-modal.show { display: flex; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .pay-modal.show {
+        display: flex;
+    }
+
+    /* Razorpay Card Container - Compact */
     .pay-card {
-        background: #fff;
-        width: min(720px, 100%);
-        border-radius: 16px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 30px 60px rgba(15, 23, 42, 0.2);
+        background: white;
+        width: 100%;
+        max-width: 500px;
+        border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         overflow: hidden;
+        animation: slideUp 0.3s ease;
+        margin: auto;
     }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Razorpay Header - Compact Blue gradient */
     .pay-header {
-        padding: 14px 18px;
+        background: linear-gradient(135deg, #3395FF 0%, #528FF0 100%);
+        padding: 1rem 1.25rem;
+        color: white;
+        position: relative;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: linear-gradient(135deg, #1b1f3b 0%, #3f2b96 100%);
-        color: #fff;
     }
-    .pay-header h3 { margin: 0; font-size: 1.05rem; }
-    .pay-header small { opacity: 0.9; }
-    .pay-body { padding: 16px 18px; }
-    .pay-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 14px; }
-    .pay-field label { font-size: 0.8rem; font-weight: 700; color: #374151; }
+
+    .pay-brand {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .pay-brand-text {
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    .pay-merchant {
+        font-size: 0.75rem;
+        opacity: 0.85;
+    }
+
+    .pay-close {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 1.3rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+        line-height: 1;
+    }
+
+    .pay-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Payment Body - Compact */
+    .pay-body {
+        padding: 1.25rem;
+        background: #FAFBFC;
+        max-height: calc(90vh - 120px);
+        overflow-y: auto;
+    }
+
+    /* Amount Section - Inline */
+    .pay-amount-section {
+        background: white;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        border: 1px solid #E8E8E8;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .pay-info {
+        flex: 1;
+    }
+
+    .pay-meta {
+        font-size: 0.8rem;
+        color: #6B7280;
+        margin-bottom: 0.3rem;
+    }
+
+    .pay-description {
+        font-size: 0.75rem;
+        color: #9CA3AF;
+    }
+
+    .pay-amount {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1A1A1A;
+        font-family: 'Inter', sans-serif;
+        white-space: nowrap;
+    }
+
+    /* Payment Methods Tabs - Compact */
+    .pay-methods {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+        background: white;
+        padding: 0.4rem;
+        border-radius: 6px;
+        border: 1px solid #E8E8E8;
+    }
+
+    .pay-method-tab {
+        padding: 0.6rem;
+        background: transparent;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6B7280;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+    }
+
+    .pay-method-tab.active {
+        background: #528FF0;
+        color: white;
+    }
+
+    .pay-method-tab i {
+        font-size: 0.9rem;
+    }
+
+    /* Card Form - Compact */
+    .pay-form {
+        background: white;
+        padding: 1rem;
+        border-radius: 6px;
+        border: 1px solid #E8E8E8;
+    }
+
+    .pay-field {
+        margin-bottom: 0.85rem;
+    }
+
+    .pay-field:last-of-type {
+        margin-bottom: 0;
+    }
+
+    .pay-field label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4B5563;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
     .pay-field input {
         width: 100%;
-        padding: 9px 10px;
-        border: 1px solid #d1d5db;
-        border-radius: 10px;
-        margin-top: 4px;
-        font: inherit;
+        padding: 0.7rem 0.85rem;
+        border: 1px solid #D1D5DB;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        transition: all 0.2s;
     }
-    .pay-amount {
-        font-size: 1.6rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin: 8px 0 2px;
+
+    .pay-field input:focus {
+        outline: none;
+        border-color: #528FF0;
+        box-shadow: 0 0 0 2px rgba(82, 143, 240, 0.1);
     }
-    .pay-meta { color: #6b7280; font-size: 0.9rem; }
-    .pay-actions { display: flex; gap: 10px; margin-top: 12px; }
-    .pay-close {
-        background: transparent;
-        color: #fff;
-        border: 0;
-        font-size: 1.2rem;
+
+    .pay-field input::placeholder {
+        color: #9CA3AF;
+    }
+
+    .pay-field-group {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 0.6rem;
+    }
+
+    /* Card Icons - Compact */
+    .card-icons {
+        display: flex;
+        gap: 0.4rem;
+        margin-top: 0.4rem;
+    }
+
+    .card-icon {
+        width: 32px;
+        height: 20px;
+        background: #F3F4F6;
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: #6B7280;
+        border: 1px solid #E5E7EB;
+    }
+
+    /* Security Badge - Compact */
+    .security-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        color: #6B7280;
+        margin: 0.85rem 0;
+        padding: 0.6rem;
+        background: #F9FAFB;
+        border-radius: 4px;
+    }
+
+    .security-badge i {
+        color: #10B981;
+        font-size: 0.85rem;
+    }
+
+    /* Pay Button - Razorpay Blue */
+    .pay-submit {
+        width: 100%;
+        padding: 0.85rem;
+        background: linear-gradient(135deg, #528FF0 0%, #3395FF 100%);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        font-weight: 700;
         cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 3px 10px rgba(82, 143, 240, 0.3);
+    }
+
+    .pay-submit:hover {
+        background: linear-gradient(135deg, #3395FF 0%, #528FF0 100%);
+        box-shadow: 0 5px 15px rgba(82, 143, 240, 0.4);
+        transform: translateY(-1px);
+    }
+
+    /* Powered by Razorpay */
+    .powered-by {
+        text-align: center;
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid #E8E8E8;
+        font-size: 0.7rem;
+        color: #9CA3AF;
+    }
+
+    .powered-by span {
+        color: #528FF0;
+        font-weight: 600;
+    }
+
+    /* Scrollbar styling for modal body */
+    .pay-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .pay-body::-webkit-scrollbar-track {
+        background: #F3F4F6;
+        border-radius: 10px;
+    }
+
+    .pay-body::-webkit-scrollbar-thumb {
+        background: #D1D5DB;
+        border-radius: 10px;
+    }
+
+    .pay-body::-webkit-scrollbar-thumb:hover {
+        background: #9CA3AF;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .pay-card {
+            max-width: 100%;
+            margin: 0.5rem;
+        }
+
+        .pay-amount {
+            font-size: 1.3rem;
+        }
+
+        .pay-body {
+            max-height: calc(100vh - 140px);
+        }
     }
 </style>
 {% endblock %}
-{% block content %}
-<section class="hero hero-payments">
-    <div>
-        <h2>Driver Payments</h2>
-        <p>Approve and record trip reimbursements and payouts.</p>
-    </div>
-</section>
-<form class="filters" method="get">
-    <div class="filter-grid">
-        <p>
-            <label>Status</label><br>
-            <select name="status">
-                <option value="">All</option>
-                {% for key, label in status_choices %}
-                <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </p>
-        <p><button class="btn info" type="submit">Filter</button></p>
-    </div>
-</form>
-<div class="panel">
-<table>
-    <thead>
-        <tr>
-            <th>Trip ID</th>
-            <th>Driver</th>
-            <th>Gateway</th>
-            <th>Base Pay</th>
-            <th>Expenses</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Approved</th>
-            <th>Paid</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for payment in payments %}
-        <tr>
-            <td>{{ payment.trip.id }}</td>
-            <td>{{ payment.driver.user.username }}</td>
-            <td>{{ payment.payment_gateway|default:"-" }}</td>
-            <td>{{ payment.base_amount|floatformat:2 }}</td>
-            <td>{{ payment.expense_total|floatformat:2 }}</td>
-            <td>{{ payment.total_amount|floatformat:2 }}</td>
-            <td><span class="badge {{ payment.status }}">{{ payment.get_status_display }}</span></td>
-            <td>{% if payment.approved_at %}{{ payment.approved_at|date:"M d, Y g:i A" }}{% else %}-{% endif %}</td>
-            <td>{% if payment.paid_at %}{{ payment.paid_at|date:"M d, Y g:i A" }}{% else %}-{% endif %}</td>
-            <td>
-                {% if payment.status != 'paid' %}
-                    <a class="btn warning" href="{% url 'approve_payment' payment.id %}">Approve</a>
-                    <button class="btn info open-pay-modal"
-                        data-id="{{ payment.id }}"
-                        data-trip="{{ payment.trip.id }}"
-                        data-driver="{{ payment.driver.user.username }}"
-                        data-amount="{{ payment.total_amount|floatformat:2 }}">
-                        Pay
-                    </button>
-                    <a class="btn success" href="{% url 'pay_driver' payment.id %}">Paid</a>
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-    {% empty %}
-        <tr><td colspan="10">No payments found.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
-</div>
 
-<div class="pay-modal" id="pay-modal">
-    <div class="pay-card">
-        <div class="pay-header">
-            <div>
-                <h3>Razorpay Secure Checkout</h3>
-                <small>SMARTFLEET</small>
-            </div>
-            <button class="pay-close" type="button" id="pay-close">×</button>
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero-payments">
+        <div>
+            <h2>Driver Payments</h2>
+            <p>Approve and record trip reimbursements and payouts.</p>
         </div>
-        <div class="pay-body">
-            <div class="pay-meta">Trip <span id="pay-trip">-</span> • Driver <span id="pay-driver">-</span></div>
-            <div class="pay-amount">₹ <span id="pay-amount">0.00</span></div>
-            <p class="pay-meta">Complete the payment using any test card details.</p>
-            <form method="post" id="pay-form">
-                {% csrf_token %}
-                <div class="pay-grid">
+    </section>
+
+    <!-- Filters -->
+    <form class="filters" method="get">
+        <div class="filter-grid">
+            <div>
+                <label>Status</label>
+                <select name="status">
+                    <option value="">All</option>
+                    {% for key, label in status_choices %}
+                    <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button class="btn info" type="submit">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Payments Table -->
+    <div class="panel">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Trip ID</th>
+                    <th>Driver</th>
+                    <th>Base Pay</th>
+                    <th>Expenses</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Approved</th>
+                    <th>Paid</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for payment in payments %}
+                <tr>
+                    <td><strong>{{ payment.trip.id }}</strong></td>
+                    <td>{{ payment.driver.user.first_name }} {{ payment.driver.user.last_name }}</td>
+                    <td>₹{{ payment.base_amount|floatformat:2 }}</td>
+                    <td>₹{{ payment.expense_total|floatformat:2 }}</td>
+                    <td><strong>₹{{ payment.total_amount|floatformat:2 }}</strong></td>
+                    <td><span class="badge {{ payment.status }}">{{ payment.get_status_display }}</span></td>
+                    <td>{% if payment.approved_at %}{{ payment.approved_at|date:"M d, Y g:i A" }}{% else %}-{% endif %}</td>
+                    <td>{% if payment.paid_at %}{{ payment.paid_at|date:"M d, Y g:i A" }}{% else %}-{% endif %}</td>
+                    <td>
+                        {% if payment.status != 'paid' %}
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <a class="btn warning" href="{% url 'approve_payment' payment.id %}" style="font-size: 0.85rem; padding: 0.6rem 1rem;">Approve</a>
+                                <button class="btn info open-pay-modal" style="font-size: 0.85rem; padding: 0.6rem 1rem;"
+                                    data-id="{{ payment.id }}"
+                                    data-trip="{{ payment.trip.id }}"
+                                    data-driver="{{ payment.driver.user.first_name }} {{ payment.driver.user.last_name }}"
+                                    data-amount="{{ payment.total_amount|floatformat:2 }}">
+                                    Pay
+                                </button>
+                                <a class="btn success" href="{% url 'pay_driver' payment.id %}" style="font-size: 0.85rem; padding: 0.6rem 1rem;">Mark as Paid</a>
+                            </div>
+                        {% else %}
+                            <span class="badge paid">Completed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="9" style="text-align: center; padding: 2rem; color: #9CA3AF;">No payments found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Razorpay-Style Payment Modal -->
+    <div class="pay-modal" id="pay-modal">
+        <div class="pay-card">
+            <!-- Header - Razorpay Blue -->
+            <div class="pay-header">
+                <div class="pay-brand">
+                    <div class="pay-brand-text">Razorpay</div>
+                    <div class="pay-merchant">SMARTFLEET Payment</div>
+                </div>
+                <button class="pay-close" type="button" id="pay-close">×</button>
+            </div>
+
+            <!-- Body -->
+            <div class="pay-body">
+                <!-- Amount Section - Inline -->
+                <div class="pay-amount-section">
+                    <div class="pay-info">
+                        <div class="pay-meta">Trip #<span id="pay-trip">-</span> • <span id="pay-driver">-</span></div>
+                        <div class="pay-description">Driver payment</div>
+                    </div>
+                    <div class="pay-amount">₹<span id="pay-amount">0.00</span></div>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="pay-methods">
+                    <button type="button" class="pay-method-tab active">
+                        <i class="fas fa-credit-card"></i> Card
+                    </button>
+                    <button type="button" class="pay-method-tab">
+                        <i class="fas fa-university"></i> UPI
+                    </button>
+                    <button type="button" class="pay-method-tab">
+                        <i class="fas fa-wallet"></i> Wallet
+                    </button>
+                </div>
+
+                <!-- Card Form -->
+                <form method="post" id="pay-form" class="pay-form">
+                    {% csrf_token %}
+                    
                     <div class="pay-field">
                         <label>Card Number</label>
-                        <input type="text" name="card_number" placeholder="4111 1111 1111 1111" required>
+                        <input type="text" name="card_number" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                        <div class="card-icons">
+                            <div class="card-icon">VISA</div>
+                            <div class="card-icon">MC</div>
+                            <div class="card-icon">AMEX</div>
+                        </div>
                     </div>
+
                     <div class="pay-field">
-                        <label>Name on Card</label>
-                        <input type="text" name="card_name" placeholder="Demo User" required>
+                        <label>Cardholder Name</label>
+                        <input type="text" name="card_name" placeholder="John Doe" required>
                     </div>
-                    <div class="pay-field">
-                        <label>Expiry</label>
-                        <input type="text" name="card_expiry" placeholder="12/26" required>
+
+                    <div class="pay-field-group">
+                        <div class="pay-field">
+                            <label>Expiry</label>
+                            <input type="text" name="card_expiry" placeholder="MM/YY" maxlength="5" required>
+                        </div>
+                        <div class="pay-field">
+                            <label>CVV</label>
+                            <input type="password" name="card_cvv" placeholder="•••" maxlength="3" required>
+                        </div>
                     </div>
-                    <div class="pay-field">
-                        <label>CVV</label>
-                        <input type="password" name="card_cvv" placeholder="123" required>
+
+                    <div class="security-badge">
+                        <i class="fas fa-lock"></i>
+                        <span>Secured with SSL encryption</span>
                     </div>
-                </div>
-                <div class="pay-actions">
-                    <button class="btn success" type="submit">Pay Now</button>
-                    <button class="btn secondary" type="button" id="pay-cancel">Cancel</button>
-                </div>
-            </form>
+
+                    <button class="pay-submit" type="submit">
+                        Pay ₹<span id="pay-amount-btn">0.00</span>
+                    </button>
+
+                    <div class="powered-by">
+                        Powered by <span>Razorpay</span>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const modal = document.getElementById("pay-modal");
-    const payForm = document.getElementById("pay-form");
-    const payTrip = document.getElementById("pay-trip");
-    const payDriver = document.getElementById("pay-driver");
-    const payAmount = document.getElementById("pay-amount");
-    const closeBtn = document.getElementById("pay-close");
-    const cancelBtn = document.getElementById("pay-cancel");
+    <script>
+        const modal = document.getElementById("pay-modal");
+        const payForm = document.getElementById("pay-form");
+        const payTrip = document.getElementById("pay-trip");
+        const payDriver = document.getElementById("pay-driver");
+        const payAmount = document.getElementById("pay-amount");
+        const payAmountBtn = document.getElementById("pay-amount-btn");
+        const closeBtn = document.getElementById("pay-close");
 
-    document.querySelectorAll(".open-pay-modal").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const id = btn.dataset.id;
-            payTrip.textContent = btn.dataset.trip || "-";
-            payDriver.textContent = btn.dataset.driver || "-";
-            payAmount.textContent = btn.dataset.amount || "0.00";
-            payForm.action = `/manager/payments/${id}/dummy/`;
-            modal.classList.add("show");
+        // Card number formatting
+        const cardNumberInput = document.querySelector('input[name="card_number"]');
+        cardNumberInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
         });
-    });
 
-    [closeBtn, cancelBtn].forEach(btn => {
-        btn.addEventListener("click", () => modal.classList.remove("show"));
-    });
-</script>
+        // Expiry date formatting
+        const expiryInput = document.querySelector('input[name="card_expiry"]');
+        expiryInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        // Open modal
+        document.querySelectorAll(".open-pay-modal").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.dataset.id;
+                const trip = btn.dataset.trip || "-";
+                const driver = btn.dataset.driver || "-";
+                const amount = btn.dataset.amount || "0.00";
+                
+                payTrip.textContent = trip;
+                payDriver.textContent = driver;
+                payAmount.textContent = amount;
+                payAmountBtn.textContent = amount;
+                payForm.action = `/manager/payments/${id}/dummy/`;
+                modal.classList.add("show");
+            });
+        });
+
+        // Close modal
+        closeBtn.addEventListener("click", () => {
+            modal.classList.remove("show");
+        });
+
+        // Close on outside click
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                modal.classList.remove("show");
+            }
+        });
+
+        // Prevent modal close on card click
+        document.querySelector(".pay-card").addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+    </script>
 {% endblock %}

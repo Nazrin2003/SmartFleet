@@ -21,13 +21,14 @@
 <form method="post">
     {% csrf_token %}
     <div class="form-grid">
-    <p><label>Plate Number</label><br><input type="text" name="plate_number" required value="{{ request.POST.plate_number|default:vehicle.plate_number|default:'' }}"></p>
-    <p><label>Model</label><br><input type="text" name="model_name" required value="{{ request.POST.model_name|default:vehicle.model_name|default:'' }}"></p>
-    <p><label>Year of Manufacture</label><br><input type="number" name="year_of_manufacture" value="{{ request.POST.year_of_manufacture|default:vehicle.year_of_manufacture|default:'' }}"></p>
-    <p><label>Type</label><br><input type="text" name="vehicle_type" value="{{ request.POST.vehicle_type|default:vehicle.vehicle_type|default:'' }}"></p>
-    <p><label>Load Capacity</label><br><input type="number" step="0.01" name="load_capacity" value="{{ request.POST.load_capacity|default:vehicle.load_capacity|default:'' }}"></p>
-    <p><label>Usage Hours (initial/baseline)</label><br><input type="number" step="0.01" name="usage_hours" value="{{ request.POST.usage_hours|default:vehicle.usage_hours|default:'' }}"></p>
-    <p><label>Battery Status (initial/baseline)</label><br><input type="number" step="0.01" name="battery_status" value="{{ request.POST.battery_status|default:vehicle.battery_status|default:'' }}"></p>
+    {% if mode == 'edit' %}
+    <p><label>Plate Number</label><br><input type="text" name="plate_number" required value="{{ request.POST.plate_number|default:vehicle.plate_number }}"></p>
+    <p><label>Model</label><br><input type="text" name="model_name" required value="{{ request.POST.model_name|default:vehicle.model_name }}"></p>
+    <p><label>Year of Manufacture</label><br><input type="number" name="year_of_manufacture" value="{{ request.POST.year_of_manufacture|default:vehicle.year_of_manufacture }}"></p>
+    <p><label>Type</label><br><input type="text" name="vehicle_type" value="{{ request.POST.vehicle_type|default:vehicle.vehicle_type }}"></p>
+    <p><label>Load Capacity</label><br><input type="number" step="0.01" name="load_capacity" value="{{ request.POST.load_capacity|default:vehicle.load_capacity }}"></p>
+    <p><label>Usage Hours (initial/baseline)</label><br><input type="number" step="0.01" name="usage_hours" value="{{ request.POST.usage_hours|default:vehicle.usage_hours }}"></p>
+    <p><label>Battery Status (initial/baseline)</label><br><input type="number" step="0.01" name="battery_status" value="{{ request.POST.battery_status|default:vehicle.battery_status }}"></p>
     <p>
         <label>Status</label><br>
         <select name="status">
@@ -38,6 +39,25 @@
             <option value="maintenance_required" {% if request.POST.status == 'maintenance_required' or vehicle.status == 'maintenance_required' %}selected{% endif %}>Maintenance Required</option>
         </select>
     </p>
+    {% else %}
+    <p><label>Plate Number</label><br><input type="text" name="plate_number" required value="{{ request.POST.plate_number|default:'' }}"></p>
+    <p><label>Model</label><br><input type="text" name="model_name" required value="{{ request.POST.model_name|default:'' }}"></p>
+    <p><label>Year of Manufacture</label><br><input type="number" name="year_of_manufacture" value="{{ request.POST.year_of_manufacture|default:'' }}"></p>
+    <p><label>Type</label><br><input type="text" name="vehicle_type" value="{{ request.POST.vehicle_type|default:'' }}"></p>
+    <p><label>Load Capacity</label><br><input type="number" step="0.01" name="load_capacity" value="{{ request.POST.load_capacity|default:'' }}"></p>
+    <p><label>Usage Hours (initial/baseline)</label><br><input type="number" step="0.01" name="usage_hours" value="{{ request.POST.usage_hours|default:'' }}"></p>
+    <p><label>Battery Status (initial/baseline)</label><br><input type="number" step="0.01" name="battery_status" value="{{ request.POST.battery_status|default:'' }}"></p>
+    <p>
+        <label>Status</label><br>
+        <select name="status">
+            <option value="available" {% if request.POST.status == 'available' %}selected{% endif %}>Available</option>
+            <option value="assigned" {% if request.POST.status == 'assigned' %}selected{% endif %}>Assigned</option>
+            <option value="in_trip" {% if request.POST.status == 'in_trip' %}selected{% endif %}>In Trip</option>
+            <option value="maintenance" {% if request.POST.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+            <option value="maintenance_required" {% if request.POST.status == 'maintenance_required' %}selected{% endif %}>Maintenance Required</option>
+        </select>
+    </p>
+    {% endif %}
     </div>
     <button class="btn success" type="submit">Save</button>
     <a class="btn secondary" href="{% url 'vehicles_page' %}">Cancel</a>

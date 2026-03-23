@@ -1420,6 +1420,7 @@ def trip_detail(request, trip_id):
             "reg": reg,
             "trip": trip,
             "show_actions": True,
+            "base_template": "base_driver.html",
         },
     )
 
@@ -1433,7 +1434,11 @@ def trip_detail_manager(request, trip_id):
     if not trip:
         messages.error(request, "Trip not found.")
         return redirect("trips_page")
-    return render(request, "trip_detail.html", {"reg": reg, "trip": trip, "show_actions": False})
+    return render(
+        request,
+        "trip_detail.html",
+        {"reg": reg, "trip": trip, "show_actions": False, "base_template": "base_manager.html"},
+    )
 
 
 @login_required(login_url='login')
@@ -1445,7 +1450,11 @@ def trip_detail_admin(request, trip_id):
     if not trip:
         messages.error(request, "Trip not found.")
         return redirect("trips_admin")
-    return render(request, "trip_detail.html", {"reg": reg, "trip": trip, "show_actions": False})
+    return render(
+        request,
+        "trip_detail.html",
+        {"reg": reg, "trip": trip, "show_actions": False, "base_template": "base_admin.html"},
+    )
 
 
 @login_required(login_url='login')

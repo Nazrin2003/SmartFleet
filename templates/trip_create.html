@@ -1,253 +1,566 @@
 {% extends "base_manager.html" %}
 {% load static %}
-{% block title %}Create Trip{% endblock %}
+
+{% block title %}Create Trip | SMARTFLEET{% endblock %}
+
 {% block extra_styles %}
 <style>
-    .hero-trip-create { background-image: url('{% static "images/fleet.jpg" %}'); min-height: 145px; display:flex; align-items:center; }
-    .form-panel { background: rgba(255,255,255,.97); border:1px solid #eadff8; border-radius:12px; padding:14px; max-width:980px; }
-    .form-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); gap:8px 14px; }
-    .form-grid p { margin:0; }
-    .items-panel { margin-top: 12px; }
-    .items-table th, .items-table td { padding: 8px; }
-    .items-actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
-    .items-table input, .items-table select { max-width: 100%; }
-    .suggestions { position: relative; z-index: 5; }
+    /* Hero Section - Simplified */
+    .hero-trip-create {
+        background-image: url('{% static "images/fleet.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        min-height: 200px;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+
+    .hero-trip-create::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(45, 27, 78, 0.85), rgba(111, 66, 193, 0.8));
+        z-index: 1;
+    }
+
+    .hero-trip-create > div {
+        position: relative;
+        z-index: 2;
+        padding: 2rem;
+    }
+
+    .hero-trip-create h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin-bottom: 0.5rem;
+    }
+
+    .hero-trip-create p {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Form Panel - Simplified */
+    .form-panel {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Section Headers - Simplified */
+    .section-header {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #6F42C1;
+    }
+
+    /* Form Grid - Simplified */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        margin: 0;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #6F42C1;
+    }
+
+    .form-group input[readonly] {
+        background: #F3F4F6;
+        color: #6B7280;
+    }
+
+    /* Suggestions - Simplified */
+    .suggestions {
+        position: relative;
+        z-index: 100;
+    }
+
     .suggestion-list {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
-        margin-top: 6px;
+        position: absolute;
+        width: 100%;
+        background: white;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-top: 0.25rem;
         overflow: hidden;
     }
+
     .suggestion-item {
-        padding: 8px 10px;
+        padding: 0.75rem 1rem;
         cursor: pointer;
         font-size: 0.9rem;
         color: #374151;
-        border-bottom: 1px solid #f3f4f6;
+        border-bottom: 1px solid #F3F4F6;
     }
-    .suggestion-item:last-child { border-bottom: 0; }
-    .suggestion-item:hover { background: #f8fafc; }
+
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+
+    .suggestion-item:hover {
+        background: #F9FAFB;
+        color: #6F42C1;
+    }
+
+    /* Items Panel - Simplified */
+    .items-panel {
+        background: #F9FAFB;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .items-panel h3 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 1rem;
+    }
+
+    /* Simple Table Override - Clean Modern Style */
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #E5E7EB;
+    }
+
+    .items-table thead {
+        background: #F3F4F6;
+    }
+
+    .items-table th {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #E5E7EB;
+    }
+
+    .items-table tbody tr {
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .items-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .items-table tbody tr:hover {
+        background: #FAFAFA;
+    }
+
+    .items-table td {
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+    }
+
+    .items-table input,
+    .items-table select {
+        width: 100%;
+        padding: 0.6rem 0.8rem;
+        border: 1px solid #D1D5DB;
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+
+    .items-table input:focus,
+    .items-table select:focus {
+        outline: none;
+        border-color: #6F42C1;
+    }
+
+    .items-table input[readonly] {
+        background: #F9FAFB;
+        color: #6B7280;
+    }
+
+    /* Items Actions - Simplified */
+    .items-actions {
+        margin-top: 1rem;
+    }
+
+    /* Buttons - Simplified */
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn.success {
+        background: #10B981;
+        color: white;
+    }
+
+    .btn.success:hover {
+        background: #059669;
+    }
+
+    .btn.info {
+        background: #6F42C1;
+        color: white;
+    }
+
+    .btn.info:hover {
+        background: #5E35A8;
+    }
+
+    .btn.danger {
+        background: #EF4444;
+        color: white;
+    }
+
+    .btn.danger:hover {
+        background: #DC2626;
+    }
+
+    .btn.secondary {
+        background: #6B7280;
+        color: white;
+    }
+
+    .btn.secondary:hover {
+        background: #4B5563;
+    }
+
+    /* Form Actions - Simplified */
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #E5E7EB;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .form-panel {
+            padding: 1.5rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
 </style>
 {% endblock %}
+
 {% block content %}
-<section class="hero hero-trip-create">
-    <div>
-        <h2>Create Trip</h2>
-        <p>Schedule a dispatch with driver, route, and delivery item details.</p>
-    </div>
-</section>
-<div class="form-panel">
-<form method="post">
-    {% csrf_token %}
-    <div class="form-grid">
-    <p>
-        <label>Driver</label><br>
-        <select name="driver_id" required>
-            <option value="">Select Driver</option>
-            {% for driver in drivers %}
-            <option value="{{ driver.id }}" {% if request.POST.driver_id == driver.id|stringformat:"s" %}selected{% endif %}>{{ driver.user.first_name }} {{ driver.user.last_name }} ({{ driver.assigned_vehicle.plate_number }})</option>
-            {% endfor %}
-        </select>
-    </p>
-    <p>
-        <label>Origin</label><br>
-        <input type="text" id="origin-input" name="origin" required placeholder="Search place" value="{{ request.POST.origin|default:'' }}">
-        <input type="hidden" name="planned_origin_lat" id="origin-lat" value="{{ request.POST.planned_origin_lat|default:'' }}">
-        <input type="hidden" name="planned_origin_lng" id="origin-lng" value="{{ request.POST.planned_origin_lng|default:'' }}">
-        <div id="origin-suggestions" class="suggestions"></div>
-    </p>
-    <p>
-        <label>Destination</label><br>
-        <input type="text" id="destination-input" name="destination" required placeholder="Search place" value="{{ request.POST.destination|default:'' }}">
-        <input type="hidden" name="planned_destination_lat" id="destination-lat" value="{{ request.POST.planned_destination_lat|default:'' }}">
-        <input type="hidden" name="planned_destination_lng" id="destination-lng" value="{{ request.POST.planned_destination_lng|default:'' }}">
-        <div id="destination-suggestions" class="suggestions"></div>
-    </p>
-    <p><label>Load (Total Weight kg)</label><br><input type="text" name="load_details" value="{{ request.POST.load_details|default:'' }}" readonly></p>
-    <p><label>Estimated Distance (km)</label><br><input type="number" step="0.01" name="estimated_distance_km" value="{{ request.POST.estimated_distance_km|default:'' }}"></p>
-    <p><label>Estimated Time (hours)</label><br><input type="number" step="0.01" name="estimated_time_hours" value="{{ request.POST.estimated_time_hours|default:'' }}"></p>
-    <p><label>Scheduled Date</label><br><input type="date" name="scheduled_date" value="{{ request.POST.scheduled_date|default:'' }}"></p>
-    </div>
-    <div class="items-panel">
-        <h3>Delivery Items</h3>
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th>Item Name</th>
-                    <th>Qty</th>
-                    <th>Unit Weight (kg)</th>
-                    <th>Total Weight (kg)</th>
-                    <th>Fragile</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="items-body">
-                <tr>
-                    <td><input type="text" name="item_name[]" required></td>
-                    <td><input type="number" name="item_quantity[]" min="1" value="1"></td>
-                    <td><input type="number" step="0.01" name="item_unit_weight[]" placeholder="kg"></td>
-                    <td><input type="number" step="0.01" name="item_total_weight[]" readonly></td>
-                    <td>
-                        <select name="item_fragile[]">
-                            <option value="no">No</option>
-                            <option value="yes">Yes</option>
-                        </select>
-                    </td>
-                    <td><button class="btn danger" type="button" onclick="removeItemRow(this)">Remove</button></td>
-                </tr>
-            </tbody>
-        </table>
-        <div class="items-actions">
-            <button class="btn info" type="button" onclick="addItemRow()">Add Item</button>
+    <!-- Hero Section -->
+    <section class="hero-trip-create">
+        <div>
+            <h2>Create New Trip</h2>
+            <p>Schedule a dispatch with driver assignment, route planning, and delivery item details.</p>
         </div>
+    </section>
+
+    <!-- Form Panel -->
+    <div class="form-panel">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Trip Details Section -->
+            <h3 class="section-header">Trip Details</h3>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Assigned Driver</label>
+                    <select name="driver_id" required>
+                        <option value="">Select Driver</option>
+                        {% for driver in drivers %}
+                        <option value="{{ driver.id }}" {% if request.POST.driver_id == driver.id|stringformat:"s" %}selected{% endif %}>
+                            {{ driver.user.first_name }} {{ driver.user.last_name }} ({{ driver.assigned_vehicle.plate_number }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Origin Location</label>
+                    <input type="text" id="origin-input" name="origin" required placeholder="Search for origin location" value="{{ request.POST.origin|default:'' }}">
+                    <input type="hidden" name="planned_origin_lat" id="origin-lat" value="{{ request.POST.planned_origin_lat|default:'' }}">
+                    <input type="hidden" name="planned_origin_lng" id="origin-lng" value="{{ request.POST.planned_origin_lng|default:'' }}">
+                    <div id="origin-suggestions" class="suggestions"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Destination</label>
+                    <input type="text" id="destination-input" name="destination" required placeholder="Search for destination" value="{{ request.POST.destination|default:'' }}">
+                    <input type="hidden" name="planned_destination_lat" id="destination-lat" value="{{ request.POST.planned_destination_lat|default:'' }}">
+                    <input type="hidden" name="planned_destination_lng" id="destination-lng" value="{{ request.POST.planned_destination_lng|default:'' }}">
+                    <div id="destination-suggestions" class="suggestions"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Total Load Weight (kg)</label>
+                    <input type="text" name="load_details" value="{{ request.POST.load_details|default:'' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Estimated Distance (km)</label>
+                    <input type="number" step="0.01" name="estimated_distance_km" value="{{ request.POST.estimated_distance_km|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Estimated Time (hours)</label>
+                    <input type="number" step="0.01" name="estimated_time_hours" value="{{ request.POST.estimated_time_hours|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Scheduled Date</label>
+                    <input type="date" name="scheduled_date" value="{{ request.POST.scheduled_date|default:'' }}">
+                </div>
+            </div>
+
+            <!-- Delivery Items Section -->
+            <div class="items-panel">
+                <h3>Delivery Items</h3>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th>Unit Weight (kg)</th>
+                            <th>Total Weight (kg)</th>
+                            <th>Fragile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-body">
+                        <tr>
+                            <td><input type="text" name="item_name[]" required placeholder="Item description"></td>
+                            <td><input type="number" name="item_quantity[]" min="1" value="1"></td>
+                            <td><input type="number" step="0.01" name="item_unit_weight[]" placeholder="0.00"></td>
+                            <td><input type="number" step="0.01" name="item_total_weight[]" readonly></td>
+                            <td>
+                                <select name="item_fragile[]">
+                                    <option value="no">No</option>
+                                    <option value="yes">Yes</option>
+                                </select>
+                            </td>
+                            <td><button class="btn danger" type="button" onclick="removeItemRow(this)">Remove</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="items-actions">
+                    <button class="btn info" type="button" onclick="addItemRow()">Add Item</button>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button class="btn success" type="submit">Create Trip</button>
+                <a class="btn secondary" href="{% url 'trips_page' %}">Cancel</a>
+            </div>
+        </form>
     </div>
-    <button class="btn success" type="submit">Create</button>
-    <a class="btn secondary" href="{% url 'trips_page' %}">Cancel</a>
-</form>
-</div>
-<script>
-function calcRowTotal(row) {
-    const qty = parseFloat(row.querySelector('input[name="item_quantity[]"]').value || 0);
-    const unit = parseFloat(row.querySelector('input[name="item_unit_weight[]"]').value || 0);
-    const total = qty > 0 && unit > 0 ? (qty * unit) : 0;
-    row.querySelector('input[name="item_total_weight[]"]').value = total ? total.toFixed(2) : '';
-    calcLoadTotal();
-}
 
-function calcLoadTotal() {
-    const rows = document.querySelectorAll('#items-body tr');
-    let sum = 0;
-    rows.forEach(row => {
-        const val = parseFloat(row.querySelector('input[name="item_total_weight[]"]').value || 0);
-        sum += val;
-    });
-    const loadInput = document.querySelector('input[name="load_details"]');
-    if (loadInput) loadInput.value = sum ? sum.toFixed(2) : '';
-}
-
-function addItemRow() {
-    const tbody = document.getElementById('items-body');
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td><input type="text" name="item_name[]" required></td>
-        <td><input type="number" name="item_quantity[]" min="1" value="1"></td>
-        <td><input type="number" step="0.01" name="item_unit_weight[]" placeholder="kg"></td>
-        <td><input type="number" step="0.01" name="item_total_weight[]" readonly></td>
-    <td>
-            <select name="item_fragile[]">
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-            </select>
-        </td>
-        <td><button class="btn danger" type="button" onclick="removeItemRow(this)">Remove</button></td>
-    `;
-    tbody.appendChild(row);
-}
-
-function removeItemRow(btn) {
-    const tbody = document.getElementById('items-body');
-    if (tbody.rows.length <= 1) return;
-    btn.closest('tr').remove();
-}
-
-document.addEventListener('input', function (event) {
-    if (
-        event.target.name === 'item_quantity[]' ||
-        event.target.name === 'item_unit_weight[]'
-    ) {
-        const row = event.target.closest('tr');
-        calcRowTotal(row);
+    <script>
+    function calcRowTotal(row) {
+        const qty = parseFloat(row.querySelector('input[name="item_quantity[]"]').value || 0);
+        const unit = parseFloat(row.querySelector('input[name="item_unit_weight[]"]').value || 0);
+        const total = qty > 0 && unit > 0 ? (qty * unit) : 0;
+        row.querySelector('input[name="item_total_weight[]"]').value = total ? total.toFixed(2) : '';
+        calcLoadTotal();
     }
-});
 
-document.addEventListener('DOMContentLoaded', function () {
-    calcLoadTotal();
-});
-</script>
-<script>
-const originInput = document.getElementById("origin-input");
-const destinationInput = document.getElementById("destination-input");
-const originList = document.getElementById("origin-suggestions");
-const destinationList = document.getElementById("destination-suggestions");
-const originLat = document.getElementById("origin-lat");
-const originLng = document.getElementById("origin-lng");
-const destinationLat = document.getElementById("destination-lat");
-const destinationLng = document.getElementById("destination-lng");
-const distanceInput = document.querySelector('input[name="estimated_distance_km"]');
-const timeInput = document.querySelector('input[name="estimated_time_hours"]');
+    function calcLoadTotal() {
+        const rows = document.querySelectorAll('#items-body tr');
+        let sum = 0;
+        rows.forEach(row => {
+            const val = parseFloat(row.querySelector('input[name="item_total_weight[]"]').value || 0);
+            sum += val;
+        });
+        const loadInput = document.querySelector('input[name="load_details"]');
+        if (loadInput) loadInput.value = sum ? sum.toFixed(2) : '';
+    }
 
-let originTimer;
-let destinationTimer;
+    function addItemRow() {
+        const tbody = document.getElementById('items-body');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="text" name="item_name[]" required placeholder="Item description"></td>
+            <td><input type="number" name="item_quantity[]" min="1" value="1"></td>
+            <td><input type="number" step="0.01" name="item_unit_weight[]" placeholder="0.00"></td>
+            <td><input type="number" step="0.01" name="item_total_weight[]" readonly></td>
+            <td>
+                <select name="item_fragile[]">
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                </select>
+            </td>
+            <td><button class="btn danger" type="button" onclick="removeItemRow(this)">Remove</button></td>
+        `;
+        tbody.appendChild(row);
+    }
 
-function renderSuggestions(target, items, onSelect) {
-    if (!items.length) {
+    function removeItemRow(btn) {
+        const tbody = document.getElementById('items-body');
+        if (tbody.rows.length <= 1) return;
+        btn.closest('tr').remove();
+        calcLoadTotal();
+    }
+
+    document.addEventListener('input', function (event) {
+        if (
+            event.target.name === 'item_quantity[]' ||
+            event.target.name === 'item_unit_weight[]'
+        ) {
+            const row = event.target.closest('tr');
+            calcRowTotal(row);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        calcLoadTotal();
+    });
+    </script>
+
+    <script>
+    const originInput = document.getElementById("origin-input");
+    const destinationInput = document.getElementById("destination-input");
+    const originList = document.getElementById("origin-suggestions");
+    const destinationList = document.getElementById("destination-suggestions");
+    const originLat = document.getElementById("origin-lat");
+    const originLng = document.getElementById("origin-lng");
+    const destinationLat = document.getElementById("destination-lat");
+    const destinationLng = document.getElementById("destination-lng");
+    const distanceInput = document.querySelector('input[name="estimated_distance_km"]');
+    const timeInput = document.querySelector('input[name="estimated_time_hours"]');
+
+    let originTimer;
+    let destinationTimer;
+
+    function renderSuggestions(target, items, onSelect) {
+        if (!items.length) {
+            target.innerHTML = "";
+            return;
+        }
+        const list = document.createElement("div");
+        list.className = "suggestion-list";
+        items.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "suggestion-item";
+            div.textContent = item.display_name;
+            div.onclick = () => onSelect(item);
+            list.appendChild(div);
+        });
         target.innerHTML = "";
-        return;
+        target.appendChild(list);
     }
-    const list = document.createElement("div");
-    list.className = "suggestion-list";
-    items.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "suggestion-item";
-        div.textContent = item.display_name;
-        div.onclick = () => onSelect(item);
-        list.appendChild(div);
+
+    async function fetchSuggestions(query) {
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=in&q=${encodeURIComponent(query)}`;
+        const res = await fetch(url);
+        return await res.json();
+    }
+
+    async function updateRoute() {
+        if (!originLat.value || !originLng.value || !destinationLat.value || !destinationLng.value) return;
+        const url = `https://router.project-osrm.org/route/v1/driving/${originLng.value},${originLat.value};${destinationLng.value},${destinationLat.value}?overview=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.routes || !data.routes.length) return;
+        const route = data.routes[0];
+        const km = (route.distance / 1000).toFixed(2);
+        const hours = (route.duration / 3600).toFixed(2);
+        if (distanceInput) distanceInput.value = km;
+        if (timeInput) timeInput.value = hours;
+    }
+
+    originInput.addEventListener("input", () => {
+        clearTimeout(originTimer);
+        originTimer = setTimeout(async () => {
+            const q = originInput.value.trim();
+            if (q.length < 3) return renderSuggestions(originList, [], () => {});
+            const items = await fetchSuggestions(q);
+            renderSuggestions(originList, items, item => {
+                originInput.value = item.display_name;
+                originLat.value = item.lat;
+                originLng.value = item.lon;
+                originList.innerHTML = "";
+                updateRoute();
+            });
+        }, 250);
     });
-    target.innerHTML = "";
-    target.appendChild(list);
-}
 
-async function fetchSuggestions(query) {
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=in&q=${encodeURIComponent(query)}`;
-    const res = await fetch(url);
-    return await res.json();
-}
-
-async function updateRoute() {
-    if (!originLat.value || !originLng.value || !destinationLat.value || !destinationLng.value) return;
-    const url = `https://router.project-osrm.org/route/v1/driving/${originLng.value},${originLat.value};${destinationLng.value},${destinationLat.value}?overview=false`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.routes || !data.routes.length) return;
-    const route = data.routes[0];
-    const km = (route.distance / 1000).toFixed(2);
-    const hours = (route.duration / 3600).toFixed(2);
-    if (distanceInput) distanceInput.value = km;
-    if (timeInput) timeInput.value = hours;
-}
-
-originInput.addEventListener("input", () => {
-    clearTimeout(originTimer);
-    originTimer = setTimeout(async () => {
-        const q = originInput.value.trim();
-        if (q.length < 3) return renderSuggestions(originList, [], () => {});
-        const items = await fetchSuggestions(q);
-        renderSuggestions(originList, items, item => {
-            originInput.value = item.display_name;
-            originLat.value = item.lat;
-            originLng.value = item.lon;
-            originList.innerHTML = "";
-            updateRoute();
-        });
-    }, 250);
-});
-
-destinationInput.addEventListener("input", () => {
-    clearTimeout(destinationTimer);
-    destinationTimer = setTimeout(async () => {
-        const q = destinationInput.value.trim();
-        if (q.length < 3) return renderSuggestions(destinationList, [], () => {});
-        const items = await fetchSuggestions(q);
-        renderSuggestions(destinationList, items, item => {
-            destinationInput.value = item.display_name;
-            destinationLat.value = item.lat;
-            destinationLng.value = item.lon;
-            destinationList.innerHTML = "";
-            updateRoute();
-        });
-    }, 250);
-});
-</script>
+    destinationInput.addEventListener("input", () => {
+        clearTimeout(destinationTimer);
+        destinationTimer = setTimeout(async () => {
+            const q = destinationInput.value.trim();
+            if (q.length < 3) return renderSuggestions(destinationList, [], () => {});
+            const items = await fetchSuggestions(q);
+            renderSuggestions(destinationList, items, item => {
+                destinationInput.value = item.display_name;
+                destinationLat.value = item.lat;
+                destinationLng.value = item.lon;
+                destinationList.innerHTML = "";
+                updateRoute();
+            });
+        }, 250);
+    });
+    </script>
 {% endblock %}

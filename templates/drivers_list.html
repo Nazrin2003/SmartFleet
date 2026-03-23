@@ -51,14 +51,14 @@
 <table>
     <thead>
     <tr>
-        <th>Username</th><th>Driver Name</th><th>License</th><th>Phone</th><th>Assigned Vehicle</th><th>Assignment Status</th><th>Status</th><th>Actions</th>
+        <th>Driver Name</th><th>Username</th><th>License</th><th>Phone</th><th>Assigned Vehicle</th><th>Assignment Status</th><th>Status</th><th>Actions</th>
     </tr>
     </thead>
     <tbody>
     {% for driver in drivers %}
     <tr>
-        <td>{{ driver.user.username }}</td>
         <td>{{ driver.user.first_name }} {{ driver.user.last_name }}</td>
+        <td>{{ driver.user.username }}</td>
         <td>{{ driver.license_number|default:'-' }}</td>
         <td>{{ driver.phone_number|default:'-' }}</td>
         <td>{% if driver.assigned_vehicle %}{{ driver.assigned_vehicle.plate_number }}{% else %}-{% endif %}</td>

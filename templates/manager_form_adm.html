@@ -38,9 +38,15 @@
         <h2>{% if mode == 'edit' %}Edit Manager{% else %}Add Manager{% endif %}</h2>
         <form method="post" class="form-grid">
             {% csrf_token %}
-    <div><label>Username</label><br><input type="text" name="username" required value="{{ request.POST.username|default:manager.user.username|default:'' }}"></div>
-    <div><label>First Name</label><br><input type="text" name="first_name" value="{{ request.POST.first_name|default:manager.user.first_name|default:'' }}"></div>
-    <div><label>Last Name</label><br><input type="text" name="last_name" value="{{ request.POST.last_name|default:manager.user.last_name|default:'' }}"></div>
+            {% if mode == 'edit' %}
+    <div><label>Username</label><br><input type="text" name="username" required value="{{ request.POST.username|default:manager.user.username }}"></div>
+    <div><label>First Name</label><br><input type="text" name="first_name" value="{{ request.POST.first_name|default:manager.user.first_name }}"></div>
+    <div><label>Last Name</label><br><input type="text" name="last_name" value="{{ request.POST.last_name|default:manager.user.last_name }}"></div>
+            {% else %}
+    <div><label>Username</label><br><input type="text" name="username" required value="{{ request.POST.username|default:'' }}"></div>
+    <div><label>First Name</label><br><input type="text" name="first_name" value="{{ request.POST.first_name|default:'' }}"></div>
+    <div><label>Last Name</label><br><input type="text" name="last_name" value="{{ request.POST.last_name|default:'' }}"></div>
+            {% endif %}
             <div><label>Password {% if mode == 'edit' %}(leave blank to keep){% endif %}</label><br><input type="password" name="password" {% if mode != 'edit' %}required{% endif %}></div>
             <div>
                 <button class="btn success" type="submit">Save</button>

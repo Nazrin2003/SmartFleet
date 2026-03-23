@@ -30,12 +30,12 @@
     {% endif %}
 </form>
 <table>
-    <thead><tr><th>Username</th><th>Name</th><th>Status</th><th>Actions</th></tr></thead>
+    <thead><tr><th>Name</th><th>Username</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>
     {% for item in managers %}
     <tr>
-        <td>{{ item.user.username }}</td>
         <td>{{ item.user.first_name }} {{ item.user.last_name }}</td>
+        <td>{{ item.user.username }}</td>
         <td>{% if item.user.is_active %}Active{% else %}Blocked{% endif %}</td>
         <td class="actions-cell">
             <a class="action-btn action-edit" href="{% url 'edit_manager_adm' item.id %}">Edit</a>
