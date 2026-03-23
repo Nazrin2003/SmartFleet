@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q, Prefetch
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
@@ -30,6 +30,7 @@ from .models import (
     TripCompletion,
     TripExpense,
     TripItem,
+    TripLocation,
     TripPayment,
     Vehicle,
 )
@@ -1457,6 +1458,51 @@ def trip_detail_admin(request, trip_id):
     )
 
 
+@login_required(login_url="login")
+@role_required("driver")
+def post_trip_location(request, trip_id):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "Invalid method"}, status=405)
+
+    driver, _ = Driver.objects.get_or_create(user=request.user)
+    trip = Trip.objects.filter(id=trip_id, driver=driver).first()
+    if not trip or trip.status != Trip.STATUS_IN_PROGRESS:
+        return JsonResponse({"ok": False, "error": "Trip not in progress"}, status=400)
+
+    lat = _to_float(request.POST.get("lat"))
+    lng = _to_float(request.POST.get("lng"))
+    if lat is None or lng is None:
+        return JsonResponse({"ok": False, "error": "Invalid coordinates"}, status=400)
+
+    TripLocation.objects.create(trip=trip, driver=driver, lat=lat, lng=lng)
+    return JsonResponse({"ok": True})
+
+
+@login_required(login_url="login")
+@role_required("manager")
+def manager_trip_location(request, trip_id):
+    trip = Trip.objects.filter(id=trip_id).first()
+    if not trip:
+        return JsonResponse({"ok": False, "error": "Trip not found"}, status=404)
+
+    latest = TripLocation.objects.filter(trip=trip).order_by("-recorded_at").first()
+    if not latest:
+        return JsonResponse({"ok": True, "data": None})
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "data": {
+                "lat": latest.lat,
+                "lng": latest.lng,
+                "recorded_at": latest.recorded_at.isoformat(),
+            },
+        }
+    )
+
+
+
+
 @login_required(login_url='login')
 @role_required('driver')
 def trip_complete_form(request, trip_id):
@@ -1625,6 +1671,7 @@ def trip_complete_form(request, trip_id):
             )
 
         expense_total = 0.0
+        expense_receipts = request.FILES.getlist("expense_receipt[]")
         TripExpense.objects.filter(trip=trip).delete()
         for idx, desc in enumerate(expense_descs):
             description = (desc or "").strip()
@@ -1633,7 +1680,13 @@ def trip_complete_form(request, trip_id):
             amount = _to_float(expense_amounts[idx]) if idx < len(expense_amounts) else None
             if amount is None:
                 continue
-            TripExpense.objects.create(trip=trip, description=description, amount=amount)
+            receipt_file = expense_receipts[idx] if idx < len(expense_receipts) else None
+            TripExpense.objects.create(
+                trip=trip,
+                description=description,
+                amount=amount,
+                receipt=receipt_file,
+            )
             expense_total += float(amount)
 
         distance_km = trip.actual_distance_km
@@ -1696,6 +1749,15 @@ def manager_payments(request):
     if status in dict(TripPayment.STATUS_CHOICES):
         payments = payments.filter(status=status)
     payments = payments.order_by("-created_at")
+    payments = list(payments)
+    for payment in payments:
+        receipt_url = None
+        expenses = payment.trip.expenses.all() if payment.trip_id else []
+        for expense in expenses:
+            if expense.receipt:
+                receipt_url = expense.receipt.url
+                break
+        payment.receipt_url = receipt_url
     return render(
         request,
         "manager_payments.html",

@@ -100,7 +100,13 @@
     </div>
 </div>
 
-{% if trip.planned_origin_lat and trip.planned_origin_lng and trip.planned_destination_lat and trip.planned_destination_lng %}
+{% if reg and reg.user_role == 'manager' and trip.status == 'in_progress' %}
+<div class="panel">
+    <h3>Live Driver Location</h3>
+    <div id="live-map" class="route-map"></div>
+    <p id="live-status" style="margin-top:8px;color:#6b7280;font-size:.9rem;">Waiting for driver location...</p>
+</div>
+{% elif trip.planned_origin_lat and trip.planned_origin_lng and trip.planned_destination_lat and trip.planned_destination_lng %}
 <div class="panel">
     <h3>Best Route</h3>
     <div id="route-map" class="route-map"></div>
@@ -232,6 +238,85 @@ document.addEventListener("DOMContentLoaded", function () {
             map.fitBounds(line.getBounds(), { padding: [20, 20] });
         })
         .catch(() => {});
+</script>
+{% endif %}
+
+{% if reg and reg.user_role == 'manager' and trip.status == 'in_progress' %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+    const liveMap = L.map('live-map').setView([10.0, 76.3], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(liveMap);
+    const liveStatus = document.getElementById("live-status");
+    let liveMarker = null;
+
+    async function fetchLiveLocation() {
+        try {
+            const res = await fetch("{% url 'manager_trip_location' trip.id %}");
+            const data = await res.json();
+            if (!data.ok) return;
+            if (!data.data) return;
+            const { lat, lng, recorded_at } = data.data;
+            const coords = [lat, lng];
+            if (!liveMarker) {
+                liveMarker = L.marker(coords, { title: "Driver" }).addTo(liveMap);
+                liveMap.setView(coords, 14);
+            } else {
+                liveMarker.setLatLng(coords);
+            }
+            if (liveStatus) {
+                liveStatus.textContent = "Last update: " + new Date(recorded_at).toLocaleString();
+            }
+        } catch (e) {}
+    }
+
+    fetchLiveLocation();
+    setInterval(fetchLiveLocation, 10000);
+</script>
+{% endif %}
+
+{% if reg and reg.user_role == 'driver' and trip.status == 'in_progress' %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function sendLiveLocation() {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(
+            function (pos) {
+                const form = new FormData();
+                form.append("lat", pos.coords.latitude);
+                form.append("lng", pos.coords.longitude);
+                fetch("{% url 'post_trip_location' trip.id %}", {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    body: form
+                }).catch(() => {});
+            },
+            function () {},
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        );
+    }
+
+    sendLiveLocation();
+    setInterval(sendLiveLocation, 10000);
 </script>
 {% endif %}
 {% endblock %}

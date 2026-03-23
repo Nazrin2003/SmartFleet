@@ -134,6 +134,17 @@ class Trip(models.Model):
         return f"Trip #{self.id} - {self.origin} to {self.destination}"
 
 
+class TripLocation(models.Model):
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="locations")
+    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name="locations")
+    lat = models.FloatField()
+    lng = models.FloatField()
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Trip #{self.trip_id} @ {self.lat},{self.lng}"
+
+
 class TripItem(models.Model):
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="items")
     item_name = models.CharField(max_length=120)
@@ -168,6 +179,7 @@ class TripExpense(models.Model):
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="expenses")
     description = models.CharField(max_length=120)
     amount = models.FloatField()
+    receipt = models.FileField(upload_to="receipts/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

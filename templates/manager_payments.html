@@ -1,4 +1,4 @@
-{% extends "base_manager.html" %}
+﻿{% extends "base_manager.html" %}
 {% load static %}
 
 {% block title %}Driver Payments | SMARTFLEET{% endblock %}
@@ -494,6 +494,7 @@
                     <th>Base Pay</th>
                     <th>Expenses</th>
                     <th>Total</th>
+                    <th>Receipt</th>
                     <th>Status</th>
                     <th>Approved</th>
                     <th>Paid</th>
@@ -505,9 +506,16 @@
                 <tr>
                     <td><strong>{{ payment.trip.id }}</strong></td>
                     <td>{{ payment.driver.user.first_name }} {{ payment.driver.user.last_name }}</td>
-                    <td>₹{{ payment.base_amount|floatformat:2 }}</td>
-                    <td>₹{{ payment.expense_total|floatformat:2 }}</td>
-                    <td><strong>₹{{ payment.total_amount|floatformat:2 }}</strong></td>
+                    <td>&#8377;{{ payment.base_amount|floatformat:2 }}</td>
+                    <td>&#8377;{{ payment.expense_total|floatformat:2 }}</td>
+                    <td><strong>&#8377;{{ payment.total_amount|floatformat:2 }}</strong></td>
+                    <td>
+                        {% if payment.receipt_url %}
+                            <a class="btn info" href="{{ payment.receipt_url }}" target="_blank">View</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td><span class="badge {{ payment.status }}">{{ payment.get_status_display }}</span></td>
                     <td>{% if payment.approved_at %}{{ payment.approved_at|date:"M d, Y g:i A" }}{% else %}-{% endif %}</td>
                     <td>{% if payment.paid_at %}{{ payment.paid_at|date:"M d, Y g:i A" }}{% else %}-{% endif %}</td>
@@ -530,7 +538,7 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="9" style="text-align: center; padding: 2rem; color: #9CA3AF;">No payments found.</td></tr>
+                <tr><td colspan="10" style="text-align: center; padding: 2rem; color: #9CA3AF;">No payments found.</td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -556,7 +564,7 @@
                         <div class="pay-meta">Trip #<span id="pay-trip">-</span> • <span id="pay-driver">-</span></div>
                         <div class="pay-description">Driver payment</div>
                     </div>
-                    <div class="pay-amount">₹<span id="pay-amount">0.00</span></div>
+                    <div class="pay-amount">?<span id="pay-amount">0.00</span></div>
                 </div>
 
                 <!-- Payment Methods -->
@@ -608,7 +616,7 @@
                     </div>
 
                     <button class="pay-submit" type="submit">
-                        Pay ₹<span id="pay-amount-btn">0.00</span>
+                        Pay ?<span id="pay-amount-btn">0.00</span>
                     </button>
 
                     <div class="powered-by">
@@ -681,3 +689,5 @@
         });
     </script>
 {% endblock %}
+
+
