@@ -26,6 +26,7 @@ urlpatterns = [
     path('manager/trips/', views.trips_page, name='trips_page'),
     path('manager/trips/<int:trip_id>/', views.trip_detail_manager, name='trip_detail_manager'),
     path('manager/trips/<int:trip_id>/location/', views.manager_trip_location, name='manager_trip_location'),
+    path('manager/trips/<int:trip_id>/locations/', views.manager_trip_locations, name='manager_trip_locations'),
     path('manager/reports/completed-trips/', views.manager_completed_trips, name='manager_completed_trips'),
     path('manager/vehicles/create/', views.vehicle_create, name='vehicle_create'),
     path('manager/vehicles/<int:vehicle_id>/', views.vehicle_detail, name='vehicle_detail'),

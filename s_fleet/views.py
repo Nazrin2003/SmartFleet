@@ -1501,6 +1501,19 @@ def manager_trip_location(request, trip_id):
     )
 
 
+@login_required(login_url="login")
+@role_required("manager")
+def manager_trip_locations(request, trip_id):
+    trip = Trip.objects.filter(id=trip_id).first()
+    if not trip:
+        return JsonResponse({"ok": False, "error": "Trip not found"}, status=404)
+
+    points = list(
+        TripLocation.objects.filter(trip=trip).order_by("recorded_at").values("lat", "lng", "recorded_at")
+    )
+    return JsonResponse({"ok": True, "data": points})
+
+
 
 
 @login_required(login_url='login')
